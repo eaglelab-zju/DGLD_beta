@@ -71,6 +71,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         self.dataset_map = {
             "Cora": "dgl.data.CoraGraphDataset()",
             "Citeseer": "dgl.data.CiteseerGraphDataset()",
+            "Pubmed": "dgl.data.PubmedGraphDataset()",
         }
         dgl.data
         assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
@@ -232,7 +233,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
 
 
 if __name__ == "__main__":
-    dataset = GraphNodeAnomalyDectionDataset("Citeseer")
+    dataset = GraphNodeAnomalyDectionDataset("Pubmed")
     print(dataset[0].num_nodes())
     print(dataset.num_anomaly)
     print(dataset.anomaly_label)
