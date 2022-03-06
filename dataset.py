@@ -70,7 +70,9 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         }
         self.dataset_map = {
             "Cora": "dgl.data.CoraGraphDataset()",
+            "Flickr": "dgl.data.CiteseerGraphDataset()",
         }
+        dgl.data
         assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
         self.q = self.q_map[name]
         self.k = k
