@@ -70,7 +70,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         }
         self.dataset_map = {
             "Cora": "dgl.data.CoraGraphDataset()",
-            "Flickr": "dgl.data.CiteseerGraphDataset()",
+            "Citeseer": "dgl.data.CiteseerGraphDataset()",
         }
         dgl.data
         assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
@@ -90,6 +90,10 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             2: contextual anomaly
         """
         return sum(self.dataset.ndata["anomaly_label"] != 0)
+
+    @property
+    def num_nodes(self):
+        return self.dataset.num_nodes()
 
     @property
     def anomaly_label(self):
@@ -228,9 +232,9 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
 
 
 if __name__ == "__main__":
-    dataset = GraphNodeAnomalyDectionDataset()
+    dataset = GraphNodeAnomalyDectionDataset("Citeseer")
     print(dataset[0].num_nodes())
     print(dataset.num_anomaly)
     print(dataset.anomaly_label)
-    rand_ans = np.random.rand(2708)
+    rand_ans = np.random.rand(dataset.num_nodes)
     dataset.evalution(rand_ans)
