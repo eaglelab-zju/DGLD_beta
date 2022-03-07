@@ -12,9 +12,19 @@ GraphAnomalyDection Benchmarking using DGL
 
 Reported/Reproduced
 
-|                 Reproducer                  | Method | BlogCatalog | Flickr  |  cora   | citeseer | pubmed  |   ACM   | ogbn-arxiv |
-| :-----------------------------------------: | :----: | :---------: | :-----: | :-----: | :------: | :-----: | :-----: | :--------: |
-| [@miziha-zp](https://github.com/miziha-zp/) |  CoLA  |   0.7854/   | 0.7513/ | 0.8237/ | 0.8779/  | 0.8968/ | 0.9512/ |  0.8073/   |
+|                 Reproducer                  |   Method   | BlogCatalog | Flickr  |  cora   | citeseer | pubmed  |   ACM   | ogbn-arxiv |
+| :-----------------------------------------: | :--------: | :---------: | :-----: | :-----: | :------: | :-----: | :-----: | :--------: |
+| [@miziha-zp](https://github.com/miziha-zp/) |    CoLA    |   0.7854/   | 0.7513/ | 0.8237/ | 0.8779/  | 0.8968/ | 0.9512/ |  0.8073/   |
+|                                             | SL-GAD |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+|                                             | ANEMONE |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+|                                             |  DOMINANT  |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+|                                             |   ComGA    |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+|                                             | AnomalyDAE |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+|                                             | ALARM |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+|                                             | AAGNN |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+
+
+
 ## GraphEdgeAnomalyDectionDataset
 
 
