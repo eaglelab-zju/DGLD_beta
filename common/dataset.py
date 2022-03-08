@@ -73,10 +73,11 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "Citeseer": "dgl.data.CiteseerGraphDataset()",
             "Pubmed": "dgl.data.PubmedGraphDataset()",
         }
-        dgl.data
+
         assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
         self.q = self.q_map[name]
         self.k = k
+        self.seed = 42
         self.dataset = eval(self.dataset_map[self.dataset_name])[0]
         self.init_anomaly_label()
         self.inject_contextual_anomalies()
@@ -109,23 +110,23 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
     def structural_anomalies_idx(self):
         anomalies = torch.where(self.anomaly_label == 1)[0].numpy()
         return anomalies
-    
+
     @property
     def contextual_anomalies_idx(self):
         anomalies = torch.where(self.anomaly_label == 2)[0].numpy()
         return anomalies
-    
+
     @property
     def normal_idx(self):
         nodes = torch.where(self.anomaly_label == 0)[0].numpy()
         return nodes
-    
+
     @property
     def node_attr(self):
-        return self.dataset.ndata['feat']
+        return self.dataset.ndata["feat"]
 
     def set_node_attr(self, attr):
-        self.dataset.ndata['feat'] = attr
+        self.dataset.ndata["feat"] = attr
 
     def set_anomaly_label(self, label):
         self.dataset.ndata["anomaly_label"] = label
@@ -141,6 +142,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         pass
 
     def inject_structural_anomalies(self):
+        np.random.seed(self.seed)
         src, dst = self.dataset.edges()
         labels = self.anomaly_label
         p, q = self.p, self.q
@@ -180,10 +182,13 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         self.dataset = dgl.to_simple(self.dataset)
         print(self.dataset.num_edges())
         self.set_anomaly_label(labels)
-        print('inject structural_anomalies numbers:', len(self.structural_anomalies_idx))
-        print('anomalies numbers:', len(self.anomalies_idx))
+        print(
+            "inject structural_anomalies numbers:", len(self.structural_anomalies_idx)
+        )
+        print("anomalies numbers:", len(self.anomalies_idx))
 
     def inject_contextual_anomalies(self):
+        np.random.seed(self.seed)
         k = self.k
         attribute_anomalies_number = self.p * self.q
         normal_nodes_idx = self.normal_idx
@@ -209,9 +214,10 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         labels = self.anomaly_label
         labels[attribute_anomalies_idx] = 2
         self.set_anomaly_label(labels)
-        print('inject contextual_anomalies numbers:', len(self.contextual_anomalies_idx))
-        print('anomalies numbers:', len(self.anomalies_idx))
-        
+        print(
+            "inject contextual_anomalies numbers:", len(self.contextual_anomalies_idx)
+        )
+        print("anomalies numbers:", len(self.anomalies_idx))
 
     def evalution(self, prediction):
         r"""
