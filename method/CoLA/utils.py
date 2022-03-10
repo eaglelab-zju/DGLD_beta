@@ -29,8 +29,8 @@ def get_parse():
 def train_epoch(epoch, args, loader, net, device, criterion, optimizer):
     loss_accum = 0
     net.train()
-    for step, (bg, labels) in enumerate(tqdm(loader, desc="Iteration")):
-        bg, labels = bg.to(device), labels.to(device)
+    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc="Iteration")):
+        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
         # cprint(labels.shape, 'debug') # torch.Size([16, 1, 5])
         feat = bg.ndata['feat'].to(device)
         efeat = bg.edata['feat'].long().to(device)
