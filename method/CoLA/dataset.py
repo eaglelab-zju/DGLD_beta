@@ -15,12 +15,18 @@ sys.path.append('../../')
 from common.dataset import GraphNodeAnomalyDectionDataset
 from common.sample import CoLASubGraphSampling
 
+def safe_add_self_loop(g):
+    newg = dgl.remove_self_loop(g)
+    newg = dgl.add_self_loop(newg)
+    return newg
+
 class CoLADataSet(DGLDataset):
     def __init__(self, base_dataset_name='Cora', subgraphsize=4):
         super(CoLADataSet).__init__()
         self.dataset_name = base_dataset_name
         self.subgraphsize = subgraphsize
-        self.dataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)[0]
+        self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
+        self.dataset = self.oraldataset[0]
         self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
         self.random_walk_sampling()
@@ -28,10 +34,20 @@ class CoLADataSet(DGLDataset):
     def random_walk_sampling(self):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))
 
+    def graph_transform(self, g):
+        newg = safe_add_self_loop(g)
+        # add virtual node as target node.
+        newg.add_nodes(1)
+        newg.ndata['feat'][-1] = newg.ndata['feat'][0]
+        newg = safe_add_self_loop(newg)
+        # Anonymization
+        newg.ndata['feat'][0] = 0
+        return newg
+
     def __getitem__(self, i):
-        pos_subgraph = dgl.node_subgraph(self.dataset, self.paces[i])
+        pos_subgraph = self.graph_transform(dgl.node_subgraph(self.dataset, self.paces[i]))
         neg_idx = np.random.randint(self.dataset.num_nodes())
-        neg_subgraph = dgl.node_subgraph(self.dataset, self.paces[neg_idx])
+        neg_subgraph = self.graph_transform(dgl.node_subgraph(self.dataset, self.paces[neg_idx]))
         return pos_subgraph, neg_subgraph
 
     def __len__(self):

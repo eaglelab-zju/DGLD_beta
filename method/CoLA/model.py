@@ -33,13 +33,16 @@ class OneLayerGCN(nn.Module):
         h = self.act(h)
         with bg.local_scope():
             bg.ndata["h"] = h
-            subgraph_pool_emb = dgl.mean_nodes(bg, "h")
+            # subgraph_pool_emb = dgl.mean_nodes(bg, "h")
+            subgraph_pool_emb = []
             # get anchor embedding
             unbatchg = dgl.unbatch(bg)
             anchor_out = []
             for g in unbatchg:
-                anchor_out.append(g.ndata["h"][0])
+                subgraph_pool_emb.append(torch.mean(g.ndata["h"][:-1], dim=0))
+                anchor_out.append(g.ndata["h"][-1])
             anchor_out = torch.stack(anchor_out, dim=0)
+            subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
         return subgraph_pool_emb, anchor_out
 
 
@@ -54,7 +57,7 @@ class CoLAModel(nn.Module):
         neg_pool_emb, _ = self.gcn(neg_batchg, neg_in_feat)
         pos_scores = self.discriminator(pos_pool_emb, anchor_out)
         neg_scores = self.discriminator(neg_pool_emb, anchor_out)
-        return pos_scores, neg_scores
+        return pos_scores[:, 0], neg_scores[:, 0]
 
 
 if __name__ == "__main__":
