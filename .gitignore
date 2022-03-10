@@ -1,3 +1,5 @@
 method/CoLA/dataset/*
 *.pt
 *.zip
+t.py
+*.pyc
