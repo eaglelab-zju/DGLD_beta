@@ -5,6 +5,7 @@ from dgl.data import DGLDataset
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 
+from .utils import is_bidirected
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
 
@@ -79,6 +80,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         self.k = k
         self.seed = 42
         self.dataset = eval(self.dataset_map[self.dataset_name])[0]
+        assert is_bidirected(self.dataset) == True
         self.init_anomaly_label()
         self.inject_contextual_anomalies()
         self.inject_structural_anomalies()
@@ -173,14 +175,14 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         # update edges
         self.dataset.remove_edges(torch.arange(self.dataset.num_edges()))
         self.dataset.add_edges(src, dst)
-        print(self.dataset.num_edges())
+        # print(self.dataset.num_edges())
         # BUG
         r"""
         dgl.DGLGraph.to_simple is not supported inplace
         """
         # self.dataset.to_simple()
         self.dataset = dgl.to_simple(self.dataset)
-        print(self.dataset.num_edges())
+        # print(self.dataset.num_edges())
         self.set_anomaly_label(labels)
         print(
             "inject structural_anomalies numbers:", len(self.structural_anomalies_idx)
@@ -239,9 +241,12 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
 
 
 if __name__ == "__main__":
-    dataset = GraphNodeAnomalyDectionDataset("Pubmed")
-    print(dataset[0].num_nodes())
-    print(dataset.num_anomaly)
-    print(dataset.anomaly_label)
-    rand_ans = np.random.rand(dataset.num_nodes)
-    dataset.evalution(rand_ans)
+    well_test_dataset = ["Cora", "Pubmed", "Citeseer"]
+    for data_name in well_test_dataset:
+        print(well_test_dataset)
+        dataset = GraphNodeAnomalyDectionDataset("Pubmed")
+        print(dataset[0].num_nodes())
+        print(dataset.num_anomaly)
+        print(dataset.anomaly_label)
+        rand_ans = np.random.rand(dataset.num_nodes)
+        dataset.evalution(rand_ans)
