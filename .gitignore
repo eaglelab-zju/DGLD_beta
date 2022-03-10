@@ -3,3 +3,4 @@ method/CoLA/dataset/*
 *.zip
 t.py
 *.pyc
+.vscode/settings.json
