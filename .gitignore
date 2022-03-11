@@ -4,3 +4,5 @@ method/CoLA/dataset/*
 t.py
 *.pyc
 .vscode/settings.json
+EDA.ipynb
+method/CoLA/tmp/

@@ -47,7 +47,7 @@ class OneLayerGCN(nn.Module):
 
 
 class CoLAModel(nn.Module):
-    def __init__(self, in_feats, out_feats=300, bias=True):
+    def __init__(self, in_feats, out_feats=64, bias=True):
         super(CoLAModel, self).__init__()
         self.gcn = OneLayerGCN(in_feats, out_feats, bias)
         self.discriminator = Discriminator(out_feats)

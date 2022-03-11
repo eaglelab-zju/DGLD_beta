@@ -9,7 +9,7 @@ from utils.print import cprint, lcprint
 def get_parse():
     parser = argparse.ArgumentParser(description='CoLA: Self-Supervised Contrastive Learning for Anomaly Detection')
     parser.add_argument('--dataset', type=str, default='Cora')  # "Cora", "Pubmed", "Citeseer"
-    parser.add_argument('--lr', type=float, default='1e-3')
+    parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--embedding_dim', type=int, default=64)
@@ -19,9 +19,10 @@ def get_parse():
     parser.add_argument('--subgraph_size', type=int, default=4)
     parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
     parser.add_argument('--auc_test_rounds', type=int, default=256)
-    parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--negsamp_ratio', type=int, default=1)
     parser.add_argument('--device', type=int, default=0)
+    parser.add_argument('--logdir', type=str, default='tmp')  #max min avg  weighted_sum
 
     args = parser.parse_args()
     return args

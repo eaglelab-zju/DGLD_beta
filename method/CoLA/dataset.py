@@ -1,6 +1,6 @@
 import os
 from os import path as osp
-
+import torch.nn.functional as F
 import joblib
 import numpy as np
 import pandas as pd
@@ -30,6 +30,9 @@ class CoLADataSet(DGLDataset):
         self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
         self.random_walk_sampling()
+        self.normalize_feat()
+    def normalize_feat(self):
+        self.dataset.ndata['feat'] = F.normalize(self.dataset.ndata['feat'], p=1, dim=1)
 
     def random_walk_sampling(self):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))

@@ -6,6 +6,7 @@ from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 
 from .utils import is_bidirected
+
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
 
@@ -46,11 +47,9 @@ def split_auc(groundtruth, prob):
         "attribute anomaly score:",
         roc_auc_score(attr_data_groundtruth, attr_data_predict),
     )
-    print(
-        "final anomaly score:",
-        roc_auc_score(np.where(groundtruth==0, 0, 1), prob),
-    )
-    
+    final_score = roc_auc_score(np.where(groundtruth == 0, 0, 1), prob)
+    print("final anomaly score:", final_score)
+    return final_score
 
 
 class GraphNodeAnomalyDectionDataset(DGLDataset):
@@ -236,7 +235,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         -------
         None
         """
-        split_auc(self.anomaly_label, prediction)
+        return split_auc(self.anomaly_label, prediction)
 
     def __getitem__(self, idx):
         return self.dataset
