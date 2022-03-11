@@ -39,17 +39,14 @@ def split_auc(groundtruth, prob):
     attr_data_groundtruth = np.where(groundtruth[attr_data_idx] != 0, 1, 0)
     attr_data_predict = prob[attr_data_idx]
 
-    print(
-        "structural anomaly score:",
-        roc_auc_score(str_data_groundtruth, str_data_predict),
-    )
-    print(
-        "attribute anomaly score:",
-        roc_auc_score(attr_data_groundtruth, attr_data_predict),
-    )
+    s_score = roc_auc_score(str_data_groundtruth, str_data_predict)
+    a_score = roc_auc_score(attr_data_groundtruth, attr_data_predict)
     final_score = roc_auc_score(np.where(groundtruth == 0, 0, 1), prob)
+
+    print("structural anomaly score:", s_score)
+    print("attribute anomaly score:", a_score)
     print("final anomaly score:", final_score)
-    return final_score
+    return final_score, a_score, s_score
 
 
 class GraphNodeAnomalyDectionDataset(DGLDataset):

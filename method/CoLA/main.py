@@ -37,7 +37,6 @@ if __name__ == "__main__":
         drop_last=False,
         shuffle=False,
     )
-    writer = SummaryWriter(log_dir=args.logdir)
     # model optimizer loss
     model = CoLAModel(
         in_feats=dataset[0][0].ndata["feat"].shape[1], out_feats=args.embedding_dim
@@ -47,16 +46,22 @@ if __name__ == "__main__":
     criterion = torch.nn.BCEWithLogitsLoss()
 
     # train
+    writer = SummaryWriter(log_dir=args.logdir)
     for epoch in range(args.num_epoch):
         train_loader.dataset.random_walk_sampling()
         train_epoch(epoch, args, train_loader, model, device, criterion, optimizer)
         predict_score = test_epoch(
             epoch, args, test_loader, model, device, criterion, optimizer
         )
-        auc = dataset.oraldataset.evalution(predict_score)
-        writer.add_scalar("result/auc", auc,  epoch)
+        final_score, a_score, s_score = dataset.oraldataset.evalution(predict_score)
+        writer.add_scalars(
+            "result/auc",
+            {"final": final_score, "structural": s_score, "attribute": a_score},
+            epoch
+        )
+
         writer.flush()
-        
+
     # multi-round test
     predict_score_final = 0
     for rnd in range(args.auc_test_rounds):
