@@ -3,3 +3,6 @@
 1.2 Anonymization
 2. GNN-based Contrastive Learning Model
 3. Anomaly Score Computation
+
+result:
+BCE: 

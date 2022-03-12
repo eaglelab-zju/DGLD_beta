@@ -9,6 +9,7 @@ from tqdm import tqdm
 import torch
 import dgl
 from dgl.data import DGLDataset
+from dgl.nn.pytorch import EdgeWeightNorm
 
 import sys 
 sys.path.append('../../')
@@ -33,6 +34,9 @@ class CoLADataSet(DGLDataset):
         self.normalize_feat()
     def normalize_feat(self):
         self.dataset.ndata['feat'] = F.normalize(self.dataset.ndata['feat'], p=1, dim=1)
+        norm = EdgeWeightNorm(norm='both')
+        norm_edge_weight = norm(self.dataset)
+        self.dataset.edata['w'] = norm_edge_weight
 
     def random_walk_sampling(self):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))

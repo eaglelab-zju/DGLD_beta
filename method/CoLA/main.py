@@ -49,17 +49,19 @@ if __name__ == "__main__":
     writer = SummaryWriter(log_dir=args.logdir)
     for epoch in range(args.num_epoch):
         train_loader.dataset.random_walk_sampling()
-        train_epoch(epoch, args, train_loader, model, device, criterion, optimizer)
+        loss_accum = train_epoch(
+            epoch, args, train_loader, model, device, criterion, optimizer
+        )
+        writer.add_scalar("loss", float(loss_accum), epoch)
         predict_score = test_epoch(
             epoch, args, test_loader, model, device, criterion, optimizer
         )
         final_score, a_score, s_score = dataset.oraldataset.evalution(predict_score)
         writer.add_scalars(
-            "result/auc",
+            "auc",
             {"final": final_score, "structural": s_score, "attribute": a_score},
-            epoch
+            epoch,
         )
-
         writer.flush()
 
     # multi-round test
@@ -67,7 +69,7 @@ if __name__ == "__main__":
     for rnd in range(args.auc_test_rounds):
         test_loader.dataset.random_walk_sampling()
         predict_score = test_epoch(
-            epoch, args, test_loader, model, device, criterion, optimizer
+            rnd, args, test_loader, model, device, criterion, optimizer
         )
         predict_score_final += np.array(predict_score)
     predict_score_final /= args.auc_test_rounds

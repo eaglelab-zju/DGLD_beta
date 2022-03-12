@@ -2,8 +2,8 @@ import dgl
 from dgl.nn.pytorch import GraphConv
 import torch
 import torch.nn as nn
-
-
+import torch.nn.functional as F
+from  dgl.nn.pytorch import EdgeWeightNorm
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
         super(Discriminator, self).__init__()
@@ -25,11 +25,11 @@ class Discriminator(nn.Module):
 class OneLayerGCN(nn.Module):
     def __init__(self, in_feats, out_feats=300, bias=True):
         super(OneLayerGCN, self).__init__()
-        self.conv = GraphConv(in_feats, out_feats, bias=bias)
+        self.conv = GraphConv(in_feats, out_feats, bias=bias, norm='none')
         self.act = nn.PReLU()
 
     def forward(self, bg, in_feat):
-        h = self.conv(bg, in_feat)
+        h = self.conv(bg, in_feat, edge_weight=bg.edata['w'])
         h = self.act(h)
         with bg.local_scope():
             bg.ndata["h"] = h
@@ -43,7 +43,8 @@ class OneLayerGCN(nn.Module):
                 anchor_out.append(g.ndata["h"][-1])
             anchor_out = torch.stack(anchor_out, dim=0)
             subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
-        return subgraph_pool_emb, anchor_out
+        # return subgraph_pool_emb, anchor_out
+        return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
 
 
 class CoLAModel(nn.Module):
