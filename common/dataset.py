@@ -5,7 +5,7 @@ from dgl.data import DGLDataset
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 
-from .utils import is_bidirected
+from .utils import is_bidirected, load_ogbn_arxiv
 
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
@@ -74,6 +74,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "Cora": "dgl.data.CoraGraphDataset()",
             "Citeseer": "dgl.data.CiteseerGraphDataset()",
             "Pubmed": "dgl.data.PubmedGraphDataset()",
+            "ogbn-arxiv":"load_ogbn_arxiv()",
         }
 
         assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
