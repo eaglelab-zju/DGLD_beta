@@ -14,7 +14,7 @@ from dgl.nn.pytorch import EdgeWeightNorm
 import sys 
 sys.path.append('../../')
 from common.dataset import GraphNodeAnomalyDectionDataset
-from common.sample import CoLASubGraphSampling
+from common.sample import CoLASubGraphSampling, UniformNeighborSampling
 
 def safe_add_self_loop(g):
     newg = dgl.remove_self_loop(g)
@@ -28,7 +28,7 @@ class CoLADataSet(DGLDataset):
         self.subgraphsize = subgraphsize
         self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
         self.dataset = self.oraldataset[0]
-        self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
+        self.colasubgraphsampler = UniformNeighborSampling(length=self.subgraphsize)
         self.paces = []
         self.normalize_feat()
         self.random_walk_sampling()

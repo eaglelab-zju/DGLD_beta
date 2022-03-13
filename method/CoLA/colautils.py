@@ -2,7 +2,10 @@ import argparse
 from tqdm import tqdm
 import numpy as np 
 import torch
+
+import shutil
 import sys
+import os
 sys.path.append('../../')
 from utils.print import cprint, lcprint
 
@@ -39,6 +42,9 @@ def get_parse():
     parser.add_argument('--logdir', type=str, default='tmp')  #max min avg  weighted_sum
     parser.add_argument('--global_adg', type=bool, default=True)  #max min avg  weighted_sum
     args = parser.parse_args()
+    
+    if os.path.exists(args.logdir):
+        shutil.rmtree(args.logdir)
 
     if args.lr is None:
         if args.dataset in ['Cora','Citeseer','Pubmed','Flickr']:
