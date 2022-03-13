@@ -6,3 +6,5 @@
 
 result:
 BCE: 
+
+python main.py --dataset ogbn-arxiv --lr 0.001 --logdir=log/ogbn-arxiv-ga-l2
