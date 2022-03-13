@@ -23,23 +23,42 @@ loss_fun = loss_fun_BCE
 def get_parse():
     parser = argparse.ArgumentParser(description='CoLA: Self-Supervised Contrastive Learning for Anomaly Detection')
     parser.add_argument('--dataset', type=str, default='Cora')  # "Cora", "Pubmed", "Citeseer"
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float)
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--embedding_dim', type=int, default=64)
-    parser.add_argument('--num_epoch', type=int, default=100)
+    parser.add_argument('--num_epoch', type=int)
     parser.add_argument('--drop_prob', type=float, default=0.0)
     parser.add_argument('--batch_size', type=int, default=300)
     parser.add_argument('--subgraph_size', type=int, default=4)
     parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
-    parser.add_argument('--auc_test_rounds', type=int, default=100)
+    parser.add_argument('--auc_test_rounds', type=int)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--negsamp_ratio', type=int, default=1)
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--logdir', type=str, default='tmp')  #max min avg  weighted_sum
     parser.add_argument('--global_adg', type=bool, default=True)  #max min avg  weighted_sum
-    
     args = parser.parse_args()
+
+    if args.lr is None:
+        if args.dataset in ['cora','citeseer','pubmed','Flickr']:
+            args.lr = 1e-3
+        elif args.dataset == 'ACM':
+            args.lr = 5e-4
+        elif args.dataset == 'BlogCatalog':
+            args.lr = 3e-3
+        else:
+            args.lr = 1e-3
+
+    if args.num_epoch is None:
+        if args.dataset in ['cora','citeseer','pubmed']:
+            args.num_epoch = 100
+        elif args.dataset in ['BlogCatalog','Flickr','ACM']:
+            args.num_epoch = 400
+        else:
+            args.num_epoch = 10
+            args.auc_test_rounds = 20
+            
     return args
 
 def train_epoch(epoch, args, loader, net, device, criterion, optimizer):

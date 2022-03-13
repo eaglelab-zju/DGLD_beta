@@ -57,7 +57,7 @@ class CoLASubGraphSampling(BaseSubGraphSampling):
         """
         newg = dgl.remove_self_loop(g)
         newg = dgl.add_self_loop(newg)
-        paces = dgl.sampling.random_walk(newg, start_nodes, length=self.length * 5)[0]
+        paces = dgl.sampling.random_walk(newg, start_nodes, length=self.length * 20)[0]
         rwl = []
         for start, pace in zip(start_nodes, paces):
             pace = pace.unique().numpy()[: self.length].tolist()

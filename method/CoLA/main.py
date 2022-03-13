@@ -16,6 +16,7 @@ from model import CoLAModel
 
 if __name__ == "__main__":
     args = get_parse()
+    print(args)
     if torch.cuda.is_available():
         device = torch.device("cuda:" + str(args.device))
     else:
@@ -42,7 +43,7 @@ if __name__ == "__main__":
         in_feats=dataset[0][0].ndata["feat"].shape[1], out_feats=args.embedding_dim, global_adg=args.global_adg
     ).to(device)
     print(model)
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     criterion = torch.nn.BCEWithLogitsLoss()
 
     # train
