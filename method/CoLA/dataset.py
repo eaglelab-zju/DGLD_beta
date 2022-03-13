@@ -35,8 +35,10 @@ class CoLADataSet(DGLDataset):
     def normalize_feat(self):
         self.dataset.ndata['feat'] = F.normalize(self.dataset.ndata['feat'], p=1, dim=1)
         norm = EdgeWeightNorm(norm='both')
-        norm_edge_weight = norm(self.dataset)
+        self.dataset = safe_add_self_loop(self.dataset)
+        norm_edge_weight = norm(self.dataset, edge_weight=torch.ones(self.dataset.num_edges()))
         self.dataset.edata['w'] = norm_edge_weight
+        print(norm_edge_weight)
 
     def random_walk_sampling(self):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))
