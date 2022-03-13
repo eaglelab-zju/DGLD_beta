@@ -41,7 +41,7 @@ def get_parse():
     args = parser.parse_args()
 
     if args.lr is None:
-        if args.dataset in ['cora','citeseer','pubmed','Flickr']:
+        if args.dataset in ['Cora','Citeseer','Pubmed','Flickr']:
             args.lr = 1e-3
         elif args.dataset == 'ACM':
             args.lr = 5e-4
@@ -51,13 +51,17 @@ def get_parse():
             args.lr = 1e-3
 
     if args.num_epoch is None:
-        if args.dataset in ['cora','citeseer','pubmed']:
+        if args.dataset in ['Cora','Citeseer','Pubmed']:
             args.num_epoch = 100
         elif args.dataset in ['BlogCatalog','Flickr','ACM']:
             args.num_epoch = 400
         else:
             args.num_epoch = 10
-            args.auc_test_rounds = 20
+            
+    if args.dataset != 'ogbn-arxiv':
+        args.auc_test_rounds = 256
+    else:
+        args.auc_test_rounds = 20
             
     return args
 

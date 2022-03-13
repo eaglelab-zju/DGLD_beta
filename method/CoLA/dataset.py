@@ -56,7 +56,9 @@ class CoLADataSet(DGLDataset):
 
     def __getitem__(self, i):
         pos_subgraph = self.graph_transform(dgl.node_subgraph(self.dataset, self.paces[i]))
-        neg_idx = np.random.randint(self.dataset.num_nodes())
+        neg_idx = np.random.randint(self.dataset.num_nodes()) 
+        while neg_idx == i:
+            neg_idx = np.random.randint(self.dataset.num_nodes()) 
         neg_subgraph = self.graph_transform(dgl.node_subgraph(self.dataset, self.paces[neg_idx]))
         return pos_subgraph, neg_subgraph
 
