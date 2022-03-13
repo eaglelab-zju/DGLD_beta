@@ -25,11 +25,11 @@ class Discriminator(nn.Module):
 class OneLayerGCN(nn.Module):
     def __init__(self, in_feats, out_feats=300, bias=True):
         super(OneLayerGCN, self).__init__()
-        self.conv = GraphConv(in_feats, out_feats, bias=bias, norm='none')
+        self.conv = GraphConv(in_feats, out_feats, bias=bias)
         self.act = nn.PReLU()
 
     def forward(self, bg, in_feat):
-        h = self.conv(bg, in_feat, edge_weight=bg.edata['w'])
+        h = self.conv(bg, in_feat)
         h = self.act(h)
         with bg.local_scope():
             bg.ndata["h"] = h
