@@ -30,27 +30,28 @@ class CoLADataSet(DGLDataset):
         self.dataset = self.oraldataset[0]
         self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
-        self.random_walk_sampling()
         self.normalize_feat()
+        self.random_walk_sampling()
     def normalize_feat(self):
         self.dataset.ndata['feat'] = F.normalize(self.dataset.ndata['feat'], p=1, dim=1)
         norm = EdgeWeightNorm(norm='both')
         self.dataset = safe_add_self_loop(self.dataset)
         norm_edge_weight = norm(self.dataset, edge_weight=torch.ones(self.dataset.num_edges()))
         self.dataset.edata['w'] = norm_edge_weight
-        print(norm_edge_weight)
+        # print(norm_edge_weight)
 
     def random_walk_sampling(self):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))
 
     def graph_transform(self, g):
-        newg = safe_add_self_loop(g)
+        newg = g
+        # newg = safe_add_self_loop(g)
         # add virtual node as target node.
-        newg.add_nodes(1)
-        newg.ndata['feat'][-1] = newg.ndata['feat'][0]
-        newg = safe_add_self_loop(newg)
+        # newg.add_nodes(1)
+        # newg.ndata['feat'][-1] = newg.ndata['feat'][0]
+        # newg = safe_add_self_loop(newg)
         # Anonymization
-        newg.ndata['feat'][0] = 0
+        # newg.ndata['feat'][0] = 0
         return newg
 
     def __getitem__(self, i):

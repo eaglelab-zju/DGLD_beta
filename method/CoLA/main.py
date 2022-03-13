@@ -39,7 +39,7 @@ if __name__ == "__main__":
     )
     # model optimizer loss
     model = CoLAModel(
-        in_feats=dataset[0][0].ndata["feat"].shape[1], out_feats=args.embedding_dim
+        in_feats=dataset[0][0].ndata["feat"].shape[1], out_feats=args.embedding_dim, global_adg=args.global_adg
     ).to(device)
     print(model)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)

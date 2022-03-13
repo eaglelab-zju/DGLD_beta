@@ -37,7 +37,8 @@ def get_parse():
     parser.add_argument('--negsamp_ratio', type=int, default=1)
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--logdir', type=str, default='tmp')  #max min avg  weighted_sum
-
+    parser.add_argument('--global_adg', type=bool, default=True)  #max min avg  weighted_sum
+    
     args = parser.parse_args()
     return args
 
