@@ -1,7 +1,7 @@
 # GND
 ## dataset
 - [] BlogCatalog, Flickr, ACM
-- [] ogbn-arxiv
+- [x] ogbn-arxiv
 - [] custom dataset
 
 ## method
@@ -13,3 +13,4 @@
 - [ ] ALARM
 - [ ] AAGNN
 - 
+## scalable
