@@ -51,13 +51,13 @@ def load_ogbn_arxiv():
     return [graph]
 
 def load_BlogCatalog():
-    pass
+    raise NotImplementedError
 
 def load_Flickr():
-    pass
+    raise NotImplementedError
 
 def load_ACM():
-    pass
+    raise NotImplementedError
 r"""
 cd CoLA
 python main.py --dataset ACM
