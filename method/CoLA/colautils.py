@@ -63,12 +63,13 @@ def get_parse():
             args.num_epoch = 400
         else:
             args.num_epoch = 10
-            
-    if args.dataset != 'ogbn-arxiv':
-        args.auc_test_rounds = 256
-    else:
-        args.auc_test_rounds = 20
-            
+    
+    if args.auc_test_rounds is None:
+        if args.dataset != 'ogbn-arxiv':
+            args.auc_test_rounds = 256
+        else:
+            args.auc_test_rounds = 20
+                
     return args
 
 def train_epoch(epoch, args, loader, net, device, criterion, optimizer):
