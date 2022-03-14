@@ -61,3 +61,36 @@ final anomaly score: 0.7468165233255146
 # without Bilinear
 
 
+# CoLA-Citeseer
+==========mean==========
+structural anomaly score: 0.8712328192214879
+attribute anomaly score: 0.8464757108383172
+final anomaly score: 0.8588542650299025
+==========std==========
+structural anomaly score: 0.8653404679467002
+attribute anomaly score: 0.48982478228937154
+final anomaly score: 0.6775826251180359
+==========mean+std==========
+structural anomaly score: 0.9134067778826985
+attribute anomaly score: 0.8230699821634664
+final anomaly score: 0.8682383800230826
+==========mean-std==========
+structural anomaly score: 0.7188248872101564
+attribute anomaly score: 0.8464841045011017
+final anomaly score: 0.7826544958556289
+==========mean+median==========
+structural anomaly score: 0.8599727205959501
+attribute anomaly score: 0.8510754380442765
+final anomaly score: 0.8555240793201134
+==========max==========
+structural anomaly score: 0.8881418529010596
+attribute anomaly score: 0.6856531318854264
+final anomaly score: 0.786897492393243
+==========min==========
+structural anomaly score: 0.48441086979330605
+attribute anomaly score: 0.7324939670548736
+final anomaly score: 0.6084524184240898
+==========median==========
+structural anomaly score: 0.841783653341727
+attribute anomaly score: 0.8499003252544329
+final anomaly score: 0.84584198929808
