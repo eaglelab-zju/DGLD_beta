@@ -91,6 +91,7 @@ if __name__ == "__main__":
         "std": std_predict_result,
         "mean+std": mean_predict_result + std_predict_result,
         "mean-std": mean_predict_result - std_predict_result,
+        "mean+median": mean_predict_result + median_predict_result,
         "max": max_predict_result,
         "min": min_predict_result,
         "median": median_predict_result,
