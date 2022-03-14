@@ -50,5 +50,17 @@ def load_ogbn_arxiv():
     assert is_bidirected(graph) == True
     return [graph]
 
+def load_BlogCatalog():
+    pass
+
+def load_Flickr():
+    pass
+
+def load_ACM():
+    pass
+r"""
+cd CoLA
+python main.py --dataset ACM
+"""
 if __name__ == "__main__":
     load_ogbn_arxiv()

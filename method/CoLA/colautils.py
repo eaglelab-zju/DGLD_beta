@@ -42,7 +42,7 @@ def get_parse():
     parser.add_argument('--logdir', type=str, default='tmp')  #max min avg  weighted_sum
     parser.add_argument('--global_adg', type=bool, default=True)  #max min avg  weighted_sum
     args = parser.parse_args()
-    
+
     if os.path.exists(args.logdir):
         shutil.rmtree(args.logdir)
 
@@ -53,7 +53,7 @@ def get_parse():
             args.lr = 5e-4
         elif args.dataset == 'BlogCatalog':
             args.lr = 3e-3
-        else:
+        elif args.dataset == 'ogbn-arxiv':
             args.lr = 1e-3
 
     if args.num_epoch is None:
