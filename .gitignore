@@ -6,3 +6,6 @@ t.py
 .vscode/settings.json
 EDA.ipynb
 method/CoLA/log/
+common/dataset/
+method/CoLA/dataset/
+method/BiuG/

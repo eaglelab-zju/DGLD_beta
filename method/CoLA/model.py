@@ -1,8 +1,9 @@
 import dgl
-from dgl.nn.pytorch import GraphConv
+from dgl.nn.pytorch import GraphConv, GATConv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import init
 from  dgl.nn.pytorch import EdgeWeightNorm
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
@@ -22,8 +23,80 @@ class Discriminator(nn.Module):
         return logits
 
 
+class OneLayerGCNWithGlobalAdg(nn.Module):
+    r"""
+    a onelayer subgraph GCN can use global adjacent metrix.
+    """
+    def __init__(self, in_feats, out_feats=64, global_adg=True):
+        super(OneLayerGCNWithGlobalAdg, self).__init__()
+        self.global_adg = global_adg
+        self.norm = 'none' if global_adg else 'both'
+        self.weight = nn.Parameter(torch.Tensor(in_feats, out_feats))
+        self.bias = nn.Parameter(torch.Tensor(out_feats))
+        self.conv = GraphConv(in_feats, out_feats, weight=False, bias=False, norm=self.norm)
+        self.conv.set_allow_zero_in_degree(1)
+        self.act = nn.PReLU()
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        r"""
+
+        Description
+        -----------
+        Reinitialize learnable parameters.
+
+        Note
+        ----
+        The model parameters are initialized as in the
+        `original implementation <https://github.com/tkipf/gcn/blob/master/gcn/layers.py>`__
+        where the weight :math:`W^{(l)}` is initialized using Glorot uniform initialization
+        and the bias is initialized to be zero.
+
+        """
+        if self.weight is not None:
+            init.xavier_uniform_(self.weight)
+        if self.bias is not None:
+            init.zeros_(self.bias)
+
+    def forward(self, bg, in_feat):
+        # Anonymization
+        unbatchg = dgl.unbatch(bg)
+        unbatchg_list = []
+        anchor_feat_list = []
+        for g in unbatchg:
+            anchor_feat = g.ndata['feat'][0, :].clone()
+            g.ndata['feat'][0, :] = 0
+            unbatchg_list.append(g)
+            anchor_feat_list.append(anchor_feat)
+        
+        # anchor_out
+        anchor_embs = torch.stack(anchor_feat_list, dim=0)
+        anchor_out = torch.matmul(anchor_embs, self.weight) + self.bias
+
+        bg = dgl.batch(unbatchg_list)
+        in_feat = bg.ndata['feat']
+        in_feat = torch.matmul(in_feat, self.weight) 
+        # GCN
+        if self.global_adg:
+            h = self.conv(bg, in_feat, edge_weight=bg.edata['w'])
+        else:
+            h = self.conv(bg, in_feat)
+        h += self.bias
+        h = self.act(h)
+        with bg.local_scope():
+            # pooling        
+            bg.ndata["h"] = h
+            subgraph_pool_emb = []
+            unbatchg = dgl.unbatch(bg)
+            for g in unbatchg:
+                subgraph_pool_emb.append(torch.mean(g.ndata["h"], dim=0))
+            subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
+        # return subgraph_pool_emb, anchor_out
+        return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
+
+
 class OneLayerGCN(nn.Module):
-    def __init__(self, in_feats, out_feats=300, bias=True):
+    def __init__(self, in_feats=300, out_feats=64, bias=True):
         super(OneLayerGCN, self).__init__()
         self.conv = GraphConv(in_feats, out_feats, bias=bias)
         self.act = nn.PReLU()
@@ -43,14 +116,14 @@ class OneLayerGCN(nn.Module):
                 anchor_out.append(g.ndata["h"][-1])
             anchor_out = torch.stack(anchor_out, dim=0)
             subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
-        # return subgraph_pool_emb, anchor_out
-        return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
+        return subgraph_pool_emb, anchor_out
+        # return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
 
 
 class CoLAModel(nn.Module):
-    def __init__(self, in_feats, out_feats=64, bias=True):
+    def __init__(self, in_feats=300, out_feats=64, global_adg=True):
         super(CoLAModel, self).__init__()
-        self.gcn = OneLayerGCN(in_feats, out_feats, bias)
+        self.gcn = OneLayerGCNWithGlobalAdg(in_feats, out_feats, global_adg)
         self.discriminator = Discriminator(out_feats)
 
     def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
