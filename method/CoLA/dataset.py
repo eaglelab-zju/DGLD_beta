@@ -28,7 +28,7 @@ class CoLADataSet(DGLDataset):
         self.subgraphsize = subgraphsize
         self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
         self.dataset = self.oraldataset[0]
-        self.colasubgraphsampler = UniformNeighborSampling(length=self.subgraphsize)
+        self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
         self.normalize_feat()
         self.random_walk_sampling()
