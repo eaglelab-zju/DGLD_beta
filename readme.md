@@ -21,7 +21,7 @@ Reported/Reproduced
 |                                             | SL-GAD |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
 |                                             | ANEMONE |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
 | [@GavinYGM](https://github.com/GavinYGM/) |  DOMINANT  |  0.7813/  |   0.7490/    |    /    |    /     |    /    |    0.7494/    |     /      |
-| [@GavinYGM](https://github.com/GavinYGM/) |   ComGA    |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+| [@GavinYGM](https://github.com/GavinYGM/) |   ComGA    |      81.4/      |    79.9/    |    88.4/    |    91.67/     |    92.2/    |    84.96/    |     /      |
 |                                             | AnomalyDAE |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
 |                                             | ALARM |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
 | [@fmc123653](https://github.com/fmc123653/)   | AAGNN |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
