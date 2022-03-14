@@ -24,7 +24,7 @@ Reported/Reproduced
 | [@GavinYGM](https://github.com/GavinYGM/) |   ComGA    |      0.814/      |    0.799/    |    0.884/    |    0.9167/     |    0.922/    |    0.8496/    |     /      |
 |                                             | AnomalyDAE |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
 |                                             | ALARM |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
-| [@fmc123653](https://github.com/fmc123653/)   | AAGNN |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
+| [@fmc123653](https://github.com/fmc123653/)   | AAGNN |      /      |    /    |    0.9057/    |    0.9189/     |    0.9548/    |    /    |     /      |
 
 
 
