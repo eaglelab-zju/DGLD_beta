@@ -1,7 +1,6 @@
 import dgl
 import torch
 import numpy as np
-from dgl import transform
 
 from .utils import move_start_node_fisrt
 
