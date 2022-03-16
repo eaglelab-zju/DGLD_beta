@@ -1,4 +1,4 @@
-expname=Cora_norm_None_CoLA 
+expname=Cora_CoLA_global_adj_exp2
 dataset=Cora
 
 if [ ! -d log  ];then
@@ -7,5 +7,5 @@ if [ ! -d log  ];then
 else
   echo dir exist
 fi
-python main.py --dataset $dataset --logdir log/$expname > log/$expname.log
+ CUDA_VISIBLE_DEVICES=3 python main.py --dataset $dataset --logdir log/$expname > log/$expname.log
 # nohup python main.py --dataset $dataset --logdir log/$expname > log/$expname.log 2>&1 &
