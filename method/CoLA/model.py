@@ -72,8 +72,9 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         # anchor_out
         anchor_embs = torch.stack(anchor_feat_list, dim=0)
         anchor_out = torch.matmul(anchor_embs, self.weight) + self.bias
-
+        anchor_out = self.act(anchor_out)
         bg = dgl.batch(unbatchg_list)
+        
         in_feat = bg.ndata['feat']
         in_feat = torch.matmul(in_feat, self.weight) 
         # GCN
