@@ -10,3 +10,5 @@ common/dataset/
 method/CoLA/dataset/
 method/BiuG/
 method/CoLA/tmp/
+**/log/*
+**/tmp/*
