@@ -10,12 +10,14 @@ import sys
 
 sys.path.append("../../")
 from common.dataset import GraphNodeAnomalyDectionDataset
+from utils.utils import seed_everything
 from dataset import CoLADataSet
 from colautils import get_parse, train_epoch, test_epoch
 from model import CoLAModel
 
 if __name__ == "__main__":
     args = get_parse()
+    seed_everything(args.seed)
     print(args)
     if torch.cuda.is_available():
         device = torch.device("cuda:" + str(args.device))
