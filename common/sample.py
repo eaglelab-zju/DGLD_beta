@@ -1,6 +1,6 @@
 import dgl
 import torch
-from dgl import transform
+import numpy as np
 
 from .utils import move_start_node_fisrt
 
@@ -14,6 +14,25 @@ class BaseSubGraphSampling:
     def __repr__(self):
         return self.__class__.__name__ + "()"
 
+class UniformNeighborSampling(BaseSubGraphSampling):
+    r"""
+    Uniform sampling Neighbors to generate subgraph.
+    """
+    def __init__(self, length=4):
+        self.length = 4
+
+    def __call__(self, g, start_nodes):
+        rwl = []
+        for node in start_nodes:
+            pace = [node]
+            successors = g.successors(node).numpy().tolist()
+            # remove node and shuffle
+            successors.remove(node)
+            np.random.shuffle(successors)
+            pace += successors[:self.length-1]
+            pace += [pace[0]] * max(0, self.length - len(pace))
+            rwl.append(pace)
+        return rwl
 
 class CoLASubGraphSampling(BaseSubGraphSampling):
     r"""
@@ -55,12 +74,16 @@ class CoLASubGraphSampling(BaseSubGraphSampling):
         the nodes which belong to a community with a size smaller than
         it is a little different from author's paper.
         """
-        newg = dgl.remove_self_loop(g)
-        newg = dgl.add_self_loop(newg)
-        paces = dgl.sampling.random_walk(newg, start_nodes, length=self.length * 5)[0]
+        # newg = dgl.remove_self_loop(g)
+        # newg = dgl.add_self_loop(newg)
+        # length is Very influential to the effect of the model, maybe caused "remote" neighbor is 
+        # not "friendly" to Rebuild Properties.
+        paces = dgl.sampling.random_walk(g, start_nodes, length=self.length*3, restart_prob=0)[0]
         rwl = []
         for start, pace in zip(start_nodes, paces):
-            pace = pace.unique().numpy()[: self.length].tolist()
+            pace = pace.unique().numpy()
+            np.random.shuffle(pace)
+            pace = pace[: self.length].tolist()
             pace = move_start_node_fisrt(pace, start)
             pace += [pace[0]] * max(0, self.length - len(pace))
             rwl.append(pace)

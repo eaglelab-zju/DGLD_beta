@@ -5,7 +5,8 @@ from dgl.data import DGLDataset
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 
-from .utils import is_bidirected
+from .utils import is_bidirected, load_ogbn_arxiv, load_ACM, load_BlogCatalog, load_Flickr
+
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
 
@@ -38,19 +39,14 @@ def split_auc(groundtruth, prob):
     attr_data_groundtruth = np.where(groundtruth[attr_data_idx] != 0, 1, 0)
     attr_data_predict = prob[attr_data_idx]
 
-    print(
-        "structural anomaly score:",
-        roc_auc_score(str_data_groundtruth, str_data_predict),
-    )
-    print(
-        "attribute anomaly score:",
-        roc_auc_score(attr_data_groundtruth, attr_data_predict),
-    )
-    print(
-        "final anomaly score:",
-        roc_auc_score(np.where(groundtruth==0, 0, 1), prob),
-    )
-    
+    s_score = roc_auc_score(str_data_groundtruth, str_data_predict)
+    a_score = roc_auc_score(attr_data_groundtruth, attr_data_predict)
+    final_score = roc_auc_score(np.where(groundtruth == 0, 0, 1), prob)
+
+    print("structural anomaly score:", s_score)
+    print("attribute anomaly score:", a_score)
+    print("final anomaly score:", final_score)
+    return final_score, a_score, s_score
 
 
 class GraphNodeAnomalyDectionDataset(DGLDataset):
@@ -78,6 +74,10 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "Cora": "dgl.data.CoraGraphDataset()",
             "Citeseer": "dgl.data.CiteseerGraphDataset()",
             "Pubmed": "dgl.data.PubmedGraphDataset()",
+            "ogbn-arxiv":"load_ogbn_arxiv()",
+            "ACM":"load_ACM()",
+            "BlogCatalog":"load_BlogCatalog()",
+            "Flickr":"load_Flickr"
         }
 
         assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
@@ -236,7 +236,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         -------
         None
         """
-        split_auc(self.anomaly_label, prediction)
+        return split_auc(self.anomaly_label, prediction)
 
     def __getitem__(self, idx):
         return self.dataset
