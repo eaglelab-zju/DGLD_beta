@@ -6,7 +6,7 @@ def print_shape(*a):
     for t in a:
         print(t.shape)
         
-def seed_everything(seed):
+def seed_everything(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)
