@@ -4,8 +4,10 @@ import numpy as np
 from dgl.data import DGLDataset
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
-
-from .utils import is_bidirected, load_ogbn_arxiv, load_ACM, load_BlogCatalog, load_Flickr
+import  os
+import sys
+sys.path.append('..')
+from common.utils import is_bidirected, load_ogbn_arxiv, load_ACM, load_BlogCatalog, load_Flickr
 
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.

@@ -45,6 +45,9 @@ def get_parse():
 
     if os.path.exists(args.logdir):
         shutil.rmtree(args.logdir)
+    else:
+        os.makedirs(args.logdir)
+
 
     if args.lr is None:
         if args.dataset in ['Cora','Citeseer','Pubmed','Flickr']:
