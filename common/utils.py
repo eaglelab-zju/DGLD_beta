@@ -50,14 +50,9 @@ def load_ogbn_arxiv():
     assert is_bidirected(graph) == True
     return [graph]
 
-def load_BlogCatalog():
-    raise NotImplementedError
 
-def load_Flickr():
-    raise NotImplementedError
+    
 
-def load_ACM():
-    raise NotImplementedError
 r"""
 cd CoLA
 python main.py --dataset ACM
