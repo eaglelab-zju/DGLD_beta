@@ -10,7 +10,7 @@ GraphAnomalyDection Benchmarking using DGL
 | [ComGA: Community-Aware Attributed Graph Anomaly Detection](https://dl.acm.org/doi/abs/10.1145/3488560.3498389) |  ComGA    |  WSDM22   |   [Tensorflow 1.0 ](https://github.com/DASE4/ComGA)   |
 | [A Deep Multi-View Framework for Anomaly Detection on Attributed Networks](https://ieeexplore.ieee.org/abstract/document/9162509) |  ALARM     |  TKDE20   |     |
 | [ANOMALYDAE: DUAL AUTOENCODER FOR ANOMALY DETECTION ON ATTRIBUTED NETWORKS](https://arxiv.org/pdf/2002.03665.pdf) |  AnomalyDAE     |  ICASSP20   |   [Tensorflow 1.10 ](https://github.com/haoyfan/AnomalyDAE)    |
-| [Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection](https://arxiv.org/pdf/2108.09896.pdf?ref=https://githubhelp.com) |  SL-GAD     |  arXiv22   |     |
+| [Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection](https://arxiv.org/pdf/2108.09896.pdf?ref=https://githubhelp.com) |  SL-GAD     |  TKDE21   |     |
 | [ANEMONE: Graph Anomaly Detection with Multi-Scale Contrastive Learning](https://dl.acm.org/doi/abs/10.1145/3459637.3482057) |  ANEMONE      |  CIKM21  |   [DGL0.4.1 ](https://github.com/GRAND-Lab/ANEMONE)    |
 
 ### Dataset Description
