@@ -6,11 +6,11 @@ GraphAnomalyDection Benchmarking using DGL
 | :----------------------------------------------------------------------------------------------------------------------------------- | :------: | :-----: | :------------------------------------------------------------------: |
 | [Anomaly Detection on Attributed Networks via Contrastive Self-Supervised Learning](https://arxiv.org/abs/2103.00113)                |   CoLA   | TNNLS21 |         [Pytorch+DGL0.3](https://github.com/GRAND-Lab/CoLA)          |
 | [Deep Anomaly Detection on Attributed Networks](https://epubs.siam.org/doi/pdf/10.1137/1.9781611975673.67)                           | Dominant |  SDM19  | [Pytorch](https://github.com/kaize0409/GCN_AnomalyDetection_pytorch) |
-| [Subtractive Aggregation for Attributed Network Anomaly Detection](https://www4.comp.polyu.edu.hk/~xiaohuang/docs/Shuang_CIKM21.pdf) |  AAGNN   |  CIKM   |                                                                      |
-| [ComGA: Community-Aware Attributed Graph Anomaly Detection](https://dl.acm.org/doi/abs/10.1145/3488560.3498389) |  ComGA    |  WSDM   |   [Tensorflow 1.0 ](https://github.com/DASE4/ComGA)   |
+| [Subtractive Aggregation for Attributed Network Anomaly Detection](https://www4.comp.polyu.edu.hk/~xiaohuang/docs/Shuang_CIKM21.pdf) |  AAGNN   |  CIKM21   |                                                                      |
+| [ComGA: Community-Aware Attributed Graph Anomaly Detection](https://dl.acm.org/doi/abs/10.1145/3488560.3498389) |  ComGA    |  WSDM22   |   [Tensorflow 1.0 ](https://github.com/DASE4/ComGA)   |
 | [A Deep Multi-View Framework for Anomaly Detection on Attributed Networks](https://ieeexplore.ieee.org/abstract/document/9162509) |  ALARM     |  TKDE20   |     |
 | [ANOMALYDAE: DUAL AUTOENCODER FOR ANOMALY DETECTION ON ATTRIBUTED NETWORKS](https://arxiv.org/pdf/2002.03665.pdf) |  AnomalyDAE     |  ICASSP20   |   [Tensorflow 1.10 ](https://github.com/haoyfan/AnomalyDAE)    |
-| [Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection](https://arxiv.org/pdf/2108.09896.pdf?ref=https://githubhelp.com) |  SL-GAD     |  arXiv   |     |
+| [Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection](https://arxiv.org/pdf/2108.09896.pdf?ref=https://githubhelp.com) |  SL-GAD     |  arXiv22   |     |
 | [ANEMONE: Graph Anomaly Detection with Multi-Scale Contrastive Learning](https://dl.acm.org/doi/abs/10.1145/3459637.3482057) |  ANEMONE      |  CIKM21  |   [DGL0.4.1 ](https://github.com/GRAND-Lab/ANEMONE)    |
 
 ### Dataset Description
