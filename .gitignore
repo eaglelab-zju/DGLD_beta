@@ -6,9 +6,12 @@ t.py
 .vscode/settings.json
 EDA.ipynb
 method/CoLA/log/
+method/EDA/
 common/dataset/
 method/CoLA/dataset/
 method/BiuG/
 method/CoLA/tmp/
 **/log/*
 **/tmp/*
+CoLA/
+method/DOMINANT/run2.sh
