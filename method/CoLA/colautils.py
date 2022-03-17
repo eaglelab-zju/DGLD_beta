@@ -34,13 +34,13 @@ def get_parse():
     parser.add_argument('--drop_prob', type=float, default=0.0)
     parser.add_argument('--batch_size', type=int, default=300)
     parser.add_argument('--subgraph_size', type=int, default=4)
-    parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
+    # parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
     parser.add_argument('--auc_test_rounds', type=int)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--negsamp_ratio', type=int, default=1)
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--logdir', type=str, default='tmp')  #max min avg  weighted_sum
-    parser.add_argument('--global_adg', type=bool, default=True)  #max min avg  weighted_sum
+    parser.add_argument('--logdir', type=str, default='tmp')  
+    parser.add_argument('--global_adg', type=bool, default=True)  
     args = parser.parse_args()
 
     if os.path.exists(args.logdir):
