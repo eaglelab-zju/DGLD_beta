@@ -20,6 +20,7 @@ class Encoder(nn.Module):
 
         return x
 
+
 class Attribute_Decoder(nn.Module):
     def __init__(self, nfeat, nhid, dropout):
         super(Attribute_Decoder, self).__init__()
@@ -33,6 +34,7 @@ class Attribute_Decoder(nn.Module):
         x = F.relu(self.gc2(g, x))
 
         return x
+
 
 class Structure_Decoder(nn.Module):
     def __init__(self, nhid, dropout):
@@ -48,13 +50,14 @@ class Structure_Decoder(nn.Module):
 
         return x
 
+
 class Dominant(nn.Module):
     def __init__(self, feat_size, hidden_size, dropout):
         super(Dominant, self).__init__()
         self.shared_encoder = Encoder(feat_size, hidden_size, dropout)
         self.attr_decoder = Attribute_Decoder(feat_size, hidden_size, dropout)
         self.struct_decoder = Structure_Decoder(hidden_size, dropout)
-    
+
     def forward(self, g, h):
         # encode
         x = self.shared_encoder(g, h)
