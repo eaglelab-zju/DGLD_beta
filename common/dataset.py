@@ -5,6 +5,7 @@ import numpy as np
 from dgl.data import DGLDataset
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
+import scipy.sparse as sp
 import  os
 from dgl.data.utils import download
 
@@ -93,9 +94,10 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
     BlogCatalog, Flickr, ACM, Cora, Citeseer, Pubmed and ogbn-arxiv, respectively.
     """
 
-    def __init__(self, name="Cora", p=15, k=50):
+    def __init__(self, name="Cora", p=15, k=50, cola_preprocess_features=True):
         super().__init__(name=name)
         self.dataset_name = name
+        self.cola_preprocess_features = cola_preprocess_features
         self.p = p
         self.q_map = {
             "BlogCatalog": 10,
@@ -125,7 +127,9 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         self.init_anomaly_label()
         self.inject_contextual_anomalies()
         self.inject_structural_anomalies()
-
+        if self.cola_preprocess_features:
+            print('preprocess_features as CoLA')
+            self.dataset.ndata['feat'] = self.preprocess_features(self.dataset.ndata['feat'])
     @property
     def num_anomaly(self):
         r"""
@@ -261,6 +265,17 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "inject contextual_anomalies numbers:", len(self.contextual_anomalies_idx)
         )
         print("anomalies numbers:", len(self.anomalies_idx))
+
+    def preprocess_features(self, features):
+        r"""Row-normalize feature matrix and convert to tuple representation
+        copy from [CoLA]()
+        """
+        rowsum = np.array(features.sum(1))
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.
+        r_mat_inv = sp.diags(r_inv)
+        features = r_mat_inv.dot(features)
+        return torch.Tensor(features).float()
 
     def evalution(self, prediction):
         r"""
