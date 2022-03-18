@@ -116,7 +116,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "Flickr":"load_Flickr()"
         }
 
-        assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map
+        assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map, self.dataset_name
         self.q = self.q_map[name]
         self.k = k
         self.seed = 42
