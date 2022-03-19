@@ -1,7 +1,8 @@
-import imp
 import dgl
 import torch
 import numpy as np
+import pandas as pd
+
 from dgl.data import DGLDataset
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
@@ -14,12 +15,11 @@ from dgl import backend as F
 import sys
 sys.path.append('..')
 from common.utils import is_bidirected, load_ogbn_arxiv#, load_ACM, load_BlogCatalog, load_Flickr
-
+data_path = '../../data/'
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
 def load_BlogCatalog():
-    
-    dataset=BlogCatalogGraphDataset(raw_dir='../../data')
+    dataset=BlogCatalogGraphDataset(raw_dir=data_path)
     graph = dataset[0]
     # add reverse edges
     srcs, dsts = graph.all_edges()
@@ -32,7 +32,7 @@ def load_BlogCatalog():
     return [graph]
 
 def load_Flickr():
-    dataset=FlickerGraphDataset(raw_dir='../../data')
+    dataset=FlickerGraphDataset(raw_dir=data_path)
     graph = dataset[0]
     # add reverse edges
     srcs, dsts = graph.all_edges()
@@ -444,11 +444,31 @@ class BlogCatalogGraphDataset(DGLDataset):
 
 
 if __name__ == "__main__":
-    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr"]
+    data_path = '../data/'
+    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr", "ogbn-arxiv"]
+    num_nodes_list = []
+    num_edges_list = []
+    num_anomaly_list = []
+    num_attributes_list = []
+    random_evaluation_list = []
     for data_name in well_test_dataset:
-        print("\ndataset:",data_name)
+        print("\ndataset:", data_name)
         dataset = GraphNodeAnomalyDectionDataset(data_name)
-        print("num_anomaly:",dataset.num_anomaly)
-        print("anomaly_label",dataset.anomaly_label)
+        print("num_anomaly:", dataset.num_anomaly)
+        print("anomaly_label", dataset.anomaly_label)
         rand_ans = np.random.rand(dataset.num_nodes)
-        dataset.evalution(rand_ans)
+        _, _, final_score = dataset.evalution(rand_ans)
+        num_nodes_list.append(dataset.num_nodes)
+        num_edges_list.append(dataset.dataset.num_edges())
+        num_anomaly_list.append(dataset.num_anomaly.item())
+        num_attributes_list.append(dataset.dataset.ndata['feat'].shape[1])
+        random_evaluation_list.append(final_score)
+    dataset_info = pd.DataFrame({
+        "well_test_dataset":well_test_dataset,
+        "num_nodes":num_nodes_list,
+        "num_edges":num_edges_list,
+        "num_anomaly": num_anomaly_list,
+        "num_attributes": num_attributes_list,
+        "random_evaluation":random_evaluation_list
+    })
+    print(dataset_info)
