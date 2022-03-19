@@ -1,5 +1,12 @@
 import torch
 from ogb.nodeproppred import DglNodePropPredDataset
+from scipy.stats import rankdata
+
+def ranknorm(input_arr):
+    r"""
+    input_arr: np.ndarray like object.
+    """
+    return rankdata(input_arr, method='min') / len(input_arr)
 
 def allclose(a, b, rtol=1e-4, atol=1e-4):
     return torch.allclose(a.float().cpu(),
