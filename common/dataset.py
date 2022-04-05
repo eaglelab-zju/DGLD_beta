@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from dgl.data import DGLDataset
+from sklearn import preprocessing
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 import scipy.sparse as sp
@@ -27,6 +28,7 @@ def load_BlogCatalog():
     # add self-loop
     print(f"Total edges before adding self-loop {graph.number_of_edges()}")
     graph = graph.remove_self_loop().add_self_loop()
+    
     print(f"Total edges after adding self-loop {graph.number_of_edges()}")
     assert is_bidirected(graph) == True
     return [graph]
@@ -368,10 +370,10 @@ class FlickerGraphDataset(DGLDataset):
 
     def process(self):
         mat_path =self.raw_path + '.mat'
-        
         data_mat = sio.loadmat(mat_path)
         adj = data_mat['Network']
         feat = data_mat['Attributes']
+        feat = preprocessing.normalize(feat, axis=0)
         truth = data_mat['Label']
         truth = truth.flatten()
         self._g=dgl.from_scipy(adj)
@@ -419,6 +421,7 @@ class BlogCatalogGraphDataset(DGLDataset):
         data_mat = sio.loadmat(mat_path)
         adj = data_mat['Network']
         feat = data_mat['Attributes']
+        feat = preprocessing.normalize(feat, axis=0)
         truth = data_mat['Label']
         truth = truth.flatten()
         self._g=dgl.from_scipy(adj)

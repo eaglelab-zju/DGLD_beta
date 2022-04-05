@@ -9,9 +9,11 @@ method/CoLA/log/
 method/EDA/
 common/dataset/
 method/CoLA/dataset/
+method/pp/
 method/BiuG/
 method/CoLA/tmp/
 **/log/*
 **/tmp/*
 CoLA/
 method/DOMINANT/run2.sh
+method/infoNCECoLA
