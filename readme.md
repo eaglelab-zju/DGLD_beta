@@ -25,7 +25,7 @@ Reported/Reproduced
 | [@miziha-zp](https://github.com/miziha-zp/) |    CoLA    |   0.7854/   | 0.7513/ | 0.8779/ | 0.8968/  | 0.9512/ | 0.8237/ |  0.8073/   |
 |               @sjk                              |   SL-GAD   |   0.8184/   | 0.7966/ | 0.9130/ | 0.9136/  | 0.9672/ | 0.8538/ |     /      |
 |               @gzn                              |  ANEMONE   |      /      |    /    | 0.9057/ | 0.9189/  | 0.9548/ |    /    |     /      |
-|  [@GavinYGM](https://github.com/GavinYGM/)  |  DOMINANT  |   0.7813/   | 0.7490/ |    /    |    /     |    /    | 0.7494/ |     /      |
+|  [@GavinYGM](https://github.com/GavinYGM/)  |  DOMINANT  |   0.7813/0.5701   | 0.7490/0.5475 |    /0.9554    |    /0.8455     |    /oom    | 0.7494/oom |     /oom      |
 |  [@GavinYGM](https://github.com/GavinYGM/)  |   ComGA    |   0.814/    | 0.799/  | 0.884/  | 0.9167/  | 0.922/  | 0.8496/ |     /      |
 |                                             | AnomalyDAE |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
 |      [@Xinstein-rx](https://github.com/Xinstein-rx)                                       |   ALARM    |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
