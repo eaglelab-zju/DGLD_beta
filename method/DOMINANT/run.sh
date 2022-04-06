@@ -1,5 +1,5 @@
-expname=Cora_norm_None_DOMINANT
-dataset=Cora
+expname=BlogCatalog_norm_None_DOMINANT
+dataset=BlogCatalog
 
 if [ ! -d log  ];then
   mkdir log

@@ -1,5 +1,6 @@
 import shutil
 import sys
+import scipy.sparse as sp
 import os
 sys.path.append('../../')
 
@@ -74,13 +75,14 @@ def loss_func(adj, A_hat, attrs, X_hat, alpha):
     return cost, structure_cost, attribute_cost
 
 
-def train_step(args, model, optimizer, graph, features, adj):
+def train_step(args, model, optimizer, graph, features, adj,adj_label):
 
     model.train()
     optimizer.zero_grad()
     A_hat, X_hat = model(graph, features)
+    # A_hat, X_hat = model(features,adj)
     loss, struct_loss, feat_loss = loss_func(
-        adj, A_hat, features, X_hat, args.alpha)
+        adj_label, A_hat, features, X_hat, args.alpha)
     l = torch.mean(loss)
     l.backward()
     optimizer.step()
@@ -88,10 +90,20 @@ def train_step(args, model, optimizer, graph, features, adj):
     # print("Epoch:", '%04d' % (epoch), "train_loss=", "{:.5f}".format(l.item()), "train/struct_loss=", "{:.5f}".format(struct_loss.item()),"train/feat_loss=", "{:.5f}".format(feat_loss.item()))
 
 
-def test_step(args, model, graph, features, adj):
+def test_step(args, model, graph, features, adj,adj_label):
     model.eval()
     A_hat, X_hat = model(graph, features)
-    loss, _, _ = loss_func(adj, A_hat, features, X_hat, args.alpha)
+    # A_hat, X_hat = model(features,adj)
+    loss, _, _ = loss_func(adj_label, A_hat, features, X_hat, args.alpha)
     score = loss.detach().cpu().numpy()
     # print("Epoch:", '%04d' % (epoch), 'Auc', roc_auc_score(label, score))
     return score
+
+def normalize_adj(adj):
+    """Symmetrically normalize adjacency matrix."""
+    adj = sp.coo_matrix(adj)
+    rowsum = np.array(adj.sum(1))
+    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
+    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()

@@ -13,5 +13,6 @@ method/BiuG/
 method/CoLA/tmp/
 **/log/*
 **/tmp/*
+*__pycache__
 CoLA/
 method/DOMINANT/run2.sh
