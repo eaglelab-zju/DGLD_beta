@@ -291,6 +291,38 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         """
         return split_auc(self.anomaly_label, prediction)
 
+    def evaluation_multiround(self, predict_score_arr):
+        '''
+        Description
+        -----------
+        mulit-round result(as CoLA) evaluation.
+
+        Parameter
+        ---------
+        predict_score_arr: node * num_round
+        '''
+        mean_predict_result = predict_score_arr.mean(1)
+        std_predict_result = predict_score_arr.std(1)
+        max_predict_result = predict_score_arr.max(1)
+        min_predict_result = predict_score_arr.min(1)
+        median_predict_result = np.median(predict_score_arr, 1)
+
+        descriptions = {
+            "mean": mean_predict_result,
+            "std": std_predict_result,
+            "-std": - std_predict_result,
+            "mean+std": mean_predict_result + std_predict_result,
+            "mean-std": mean_predict_result - std_predict_result,
+            "mean+median": mean_predict_result + median_predict_result,
+            "max": max_predict_result,
+            "min": min_predict_result,
+            "min-std": min_predict_result-std_predict_result,
+            "median": median_predict_result,
+        }
+        for stat in descriptions:
+            print("=" * 10 + stat + "=" * 10)
+            self.evalution(descriptions[stat])
+
     def __getitem__(self, idx):
         return self.dataset
 
