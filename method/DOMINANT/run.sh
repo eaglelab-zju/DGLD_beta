@@ -1,5 +1,5 @@
-expname=BlogCatalog_norm_None_DOMINANT
 dataset=BlogCatalog
+expname=$dataset"_DOMINANT"
 
 if [ ! -d log  ];then
   mkdir log
@@ -7,5 +7,5 @@ if [ ! -d log  ];then
 else
   echo dir exist
 fi
-python main.py --dataset $dataset --logdir log/$expname > log/$expname.log
-# nohup python main.py --dataset $dataset --logdir log/$expname > log/$expname.log 2>&1 &
+# python main.py --dataset $dataset --logdir log/$expname > log/$expname.log
+nohup python main.py --dataset $dataset --logdir log/$expname > log/$expname.log 2>&1 &
