@@ -81,23 +81,4 @@ if __name__ == "__main__":
         predict_score_arr.append(list(predict_score))
 
     predict_score_arr = np.array(predict_score_arr).T
-
-    mean_predict_result = predict_score_arr.mean(1)
-    std_predict_result = predict_score_arr.std(1)
-    max_predict_result = predict_score_arr.max(1)
-    min_predict_result = predict_score_arr.min(1)
-    median_predict_result = np.median(predict_score_arr, 1)
-
-    descriptions = {
-        "mean": mean_predict_result,
-        "std": std_predict_result,
-        "mean+std": mean_predict_result + std_predict_result,
-        "mean-std": mean_predict_result - std_predict_result,
-        "mean+median": mean_predict_result + median_predict_result,
-        "max": max_predict_result,
-        "min": min_predict_result,
-        "median": median_predict_result,
-    }
-    for stat in descriptions:
-        print("=" * 10 + stat + "=" * 10)
-        dataset.oraldataset.evalution(descriptions[stat])
+    dataset.oraldataset.evaluation_multiround(predict_score_arr)
