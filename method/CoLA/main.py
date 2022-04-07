@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import sys
 
-sys.path.append("../../")
+sys.path.append(".\\.\\")
 from common.dataset import GraphNodeAnomalyDectionDataset
 from utils.utils import seed_everything
 from dataset import CoLADataSet
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # train
     writer = SummaryWriter(log_dir=args.logdir)
     for epoch in range(args.num_epoch):
-        train_loader.dataset.random_walk_sampling()
+        train_loader.dataloader.dataset.random_walk_sampling()
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer
         )
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # multi-round test
     predict_score_arr = []
     for rnd in range(args.auc_test_rounds):
-        test_loader.dataset.random_walk_sampling()
+        test_loader.dataloader.dataset.random_walk_sampling()
         predict_score = test_epoch(
             rnd, args, test_loader, model, device, criterion, optimizer
         )
