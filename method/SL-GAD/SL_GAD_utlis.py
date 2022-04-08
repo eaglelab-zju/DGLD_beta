@@ -1,5 +1,4 @@
 import argparse
-import string
 from tqdm import tqdm
 import numpy as np 
 import torch
@@ -25,7 +24,8 @@ def loss_fun_BCE(pos_scores, neg_scores, criterion, device):
 
 loss_fun = loss_fun_BCE
 def get_parse():
-    parser = argparse.ArgumentParser(description='Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection')
+    # parser = argparse.ArgumentParser(description='CoLA: Self-Supervised Contrastive Learning for Anomaly Detection')
+    parser = argparse.ArgumentParser(description = 'Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection')
     parser.add_argument('--dataset', type=str, default='Cora')  # "Cora", "Pubmed", "Citeseer"
     parser.add_argument('--lr', type=float)
     parser.add_argument('--weight_decay', type=float, default=0.0)
@@ -33,17 +33,17 @@ def get_parse():
     parser.add_argument('--embedding_dim', type=int, default=64)
     parser.add_argument('--num_epoch', type=int)
     parser.add_argument('--drop_prob', type=float, default=0.0)
-    parser.add_argument('--batch_size', type=int, default=30)
+    parser.add_argument('--batch_size', type=int, default=300)
     parser.add_argument('--subgraph_size', type=int, default=4)
     # parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
     parser.add_argument('--auc_test_rounds', type=int)
-    parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--negsamp_ratio', type=int, default=1)
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--logdir', type=str, default='tmp')  
     parser.add_argument('--global_adg', type=bool, default=True)  
-    parser.add_argument('--alpha', type=float, default=1.0)
-    parser.add_argument('--beta', type=float, default=0.6)
+    parser.add_argument('--alpha', type = float, default = 1.0)
+    parser.add_argument('--beta', type = float, default = 0.6)
     parser.add_argument('--act_function', type = str, default= "PReLU")
     args = parser.parse_args()
 
@@ -125,6 +125,6 @@ def test_epoch(epoch, args, loader, net, device, criterion, optimizer):
         loss_accum += loss.item() 
     loss_accum /= (step + 1)
     lcprint('VALID==>epoch', epoch, 'Average valid loss: {:.2f}'.format(loss_accum), color='blue')
-    return np.array(predict_scores)
+    return np.array(torch.tensor(predict_scores, device = 'cpu'))
 
     

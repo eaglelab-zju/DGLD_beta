@@ -1,6 +1,6 @@
 
 import sys
-sys.path.append('.\\.\\')
+sys.path.append('../../')
 # print(sys.path)
 import scipy.sparse as sp
 
@@ -12,6 +12,7 @@ import numpy
 
 # from dominant_utils import get_parse, train_step, test_step
 # from models import Dominant
+
 from SL_GAD_utlis import get_parse
 from common.dataset import GraphNodeAnomalyDectionDataset
 from dgl.dataloading import GraphDataLoader
@@ -34,8 +35,8 @@ if __name__ == '__main__':
     dataset = SL_GAD_DataSet(args.dataset)
     # dataset = GraphNodeAnomalyDectionDataset(args.dataset)
     # dataset = dataset[0]
-    print(dataset)
-    print(len(dataset))
+    # print(dataset)
+    # print(len(dataset))
     
     train_loader = GraphDataLoader(
         dataset,
@@ -82,7 +83,7 @@ if __name__ == '__main__':
     # train
     writer = SummaryWriter(log_dir=args.logdir)
     for epoch in range(args.num_epoch):
-        train_loader.dataloader.dataset.random_walk_sampling()
+        train_loader.dataset.random_walk_sampling()
         # exit()
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     # multi-round test
     predict_score_arr = []
     for rnd in range(args.auc_test_rounds):
-        test_loader.dataloader.dataset.random_walk_sampling()
+        test_loader.dataset.random_walk_sampling()
         predict_score = test_epoch(
             rnd, args, test_loader, model, device, criterion, optimizer
         )
@@ -111,13 +112,13 @@ if __name__ == '__main__':
 
     predict_score_arr = numpy.array(predict_score_arr).T
     dataset.oraldataset.evaluation_multiround(predict_score_arr)
-    
+
     # mean_predict_result = predict_score_arr.mean(1)
     # std_predict_result = predict_score_arr.std(1)
     # max_predict_result = predict_score_arr.max(1)
     # min_predict_result = predict_score_arr.min(1)
     # median_predict_result = numpy.median(predict_score_arr, 1)
-
+    
     # descriptions = {
     #     "mean": mean_predict_result,
     #     "std": std_predict_result,
@@ -131,4 +132,3 @@ if __name__ == '__main__':
     # for stat in descriptions:
     #     print("=" * 10 + stat + "=" * 10)
     #     dataset.oraldataset.evalution(descriptions[stat])
-    

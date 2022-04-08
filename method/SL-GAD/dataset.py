@@ -12,7 +12,8 @@ from dgl.data import DGLDataset
 from dgl.nn.pytorch import EdgeWeightNorm
 
 import sys 
-sys.path.append('.\\.\\')
+sys.path.append('../../')
+
 from common.dataset import GraphNodeAnomalyDectionDataset
 from common.sample import CoLASubGraphSampling, UniformNeighborSampling
 
