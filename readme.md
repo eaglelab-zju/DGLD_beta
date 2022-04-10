@@ -31,7 +31,7 @@ Reported/Reproduced
 |  [@GavinYGM](https://github.com/GavinYGM/)  |   ComGA    |   0.814/    | 0.799/  | 0.884/  | 0.9167/  | 0.922/  | 0.8496/ |     /      |
 |  [@GavinYGM](https://github.com/GavinYGM/)   | AnomalyDAE |      0.9781/      |    0.9722/    |    /    |    /     |    /    |    0.9005/    |     /      |
 |      [@Xinstein-rx](https://github.com/Xinstein-rx)                                       |   ALARM    |      /      |    /    |    /    |    /     |    /    |    /    |     /      |
-| [@fmc123653](https://github.com/fmc123653/) |  AAGNN-A   |   0.8184/   | 0.8299/ |    /    |    /     | 0.8564/ |    /    |     /      |
+| [@fmc123653](https://github.com/fmc123653/) |  AAGNN   |   0.8184/   | 0.8299/ |    /    |    /     | 0.8564/ |    /    |     /      |
 
 
 

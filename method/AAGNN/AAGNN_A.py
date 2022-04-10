@@ -60,8 +60,13 @@ class AAGNN_A(nn.Module):
             
     #损失函数
     def loss_fun(self, out, mask, model, super_param, device):
-        loss_matrix = torch.sum(out * out, dim=1)[mask]
+        #得到所有节点特征的均值矩阵
+        c = torch.mm(torch.ones(out.shape[0], 1).to(device), torch.mean(out, dim=0).reshape(1, -1))
+        #计算所有节点的误差
+        loss_matrix = torch.sum((out - c) * (out - c), dim=1)[mask]
+        #取均值误差
         loss = torch.mean(loss_matrix, dim=0)
+
         l2_reg = torch.tensor(0.).to(device)#L2正则项
         for param in model.parameters():
             l2_reg += torch.norm(param)
