@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from dgl.data import DGLDataset
+from sklearn import preprocessing
 from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 import scipy.sparse as sp
@@ -27,6 +28,7 @@ def load_BlogCatalog():
     # add self-loop
     print(f"Total edges before adding self-loop {graph.number_of_edges()}")
     graph = graph.remove_self_loop().add_self_loop()
+    
     print(f"Total edges after adding self-loop {graph.number_of_edges()}")
     assert is_bidirected(graph) == True
     return [graph]
@@ -289,6 +291,40 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         """
         return split_auc(self.anomaly_label, prediction)
 
+    def evaluation_multiround(self, predict_score_arr):
+        '''
+        Description
+        -----------
+        mulit-round result(as CoLA) evaluation.
+
+        Parameter
+        ---------
+        predict_score_arr: node * num_round
+        '''
+        mean_predict_result = predict_score_arr.mean(1)
+        std_predict_result = predict_score_arr.std(1)
+        max_predict_result = predict_score_arr.max(1)
+        min_predict_result = predict_score_arr.min(1)
+        median_predict_result = np.median(predict_score_arr, 1)
+
+        descriptions = {
+            "mean": mean_predict_result,
+            "std": std_predict_result,
+            "-std": - std_predict_result,
+            "mean+std": mean_predict_result + std_predict_result,
+            "mean-std": mean_predict_result - std_predict_result,
+            "mean-2std": mean_predict_result - 2*std_predict_result,
+            "mean-3std": mean_predict_result - 3*std_predict_result,
+            "mean+median": mean_predict_result + median_predict_result,
+            "max": max_predict_result,
+            "min": min_predict_result,
+            "min-std": min_predict_result-std_predict_result,
+            "median": median_predict_result,
+        }
+        for stat in descriptions:
+            print("=" * 10 + stat + "=" * 10)
+            self.evalution(descriptions[stat])
+
     def __getitem__(self, idx):
         return self.dataset
 
@@ -368,10 +404,10 @@ class FlickerGraphDataset(DGLDataset):
 
     def process(self):
         mat_path =self.raw_path + '.mat'
-        
         data_mat = sio.loadmat(mat_path)
         adj = data_mat['Network']
         feat = data_mat['Attributes']
+        feat = preprocessing.normalize(feat, axis=0)
         truth = data_mat['Label']
         truth = truth.flatten()
         self._g=dgl.from_scipy(adj)
@@ -419,6 +455,7 @@ class BlogCatalogGraphDataset(DGLDataset):
         data_mat = sio.loadmat(mat_path)
         adj = data_mat['Network']
         feat = data_mat['Attributes']
+        feat = preprocessing.normalize(feat, axis=0)
         truth = data_mat['Label']
         truth = truth.flatten()
         self._g=dgl.from_scipy(adj)
