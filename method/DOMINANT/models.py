@@ -9,8 +9,8 @@ class Encoder(nn.Module):
     def __init__(self, nfeat, nhid, dropout):
         super(Encoder, self).__init__()
 
-        self.gc1 = GraphConv(nfeat, nhid)
-        self.gc2 = GraphConv(nhid, nhid)
+        self.gc1 = GraphConv(nfeat, nhid,norm="none")
+        self.gc2 = GraphConv(nhid, nhid,norm="none")
         self.dropout = dropout
 
     def forward(self, g, h):
@@ -24,23 +24,21 @@ class Encoder(nn.Module):
 class Attribute_Decoder(nn.Module):
     def __init__(self, nfeat, nhid, dropout):
         super(Attribute_Decoder, self).__init__()
-        self.gc1 = GraphConv(nhid, nhid)
-        self.gc2 = GraphConv(nhid, nfeat)
+        self.gc1 = GraphConv(nhid, nhid,norm="none")
+        self.gc2 = GraphConv(nhid, nfeat,norm="none")
         self.dropout = dropout
 
     def forward(self, g, h):
         x = F.relu(self.gc1(g, h))
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.relu(self.gc2(g, x))
-
         return x
-
 
 class Structure_Decoder(nn.Module):
     def __init__(self, nhid, dropout):
         super(Structure_Decoder, self).__init__()
 
-        self.gc1 = GraphConv(nhid, nhid)
+        self.gc1 = GraphConv(nhid, nhid,norm="none")
         self.dropout = dropout
 
     def forward(self, g, h):
