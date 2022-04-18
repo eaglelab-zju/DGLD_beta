@@ -313,6 +313,8 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "-std": - std_predict_result,
             "mean+std": mean_predict_result + std_predict_result,
             "mean-std": mean_predict_result - std_predict_result,
+            "mean-2std": mean_predict_result - 2*std_predict_result,
+            "mean-3std": mean_predict_result - 3*std_predict_result,
             "mean+median": mean_predict_result + median_predict_result,
             "max": max_predict_result,
             "min": min_predict_result,

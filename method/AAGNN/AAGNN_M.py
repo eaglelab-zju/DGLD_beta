@@ -6,9 +6,51 @@ from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 import scipy.sparse as spp
 from tqdm import tqdm
-
+from torch.utils.tensorboard import SummaryWriter
 
 class AAGNN_M(nn.Module):
+    def __init__(self,):
+        super().__init__()
+    def fit(self, dataset, args):
+        graph = dataset[0]
+        features = graph.ndata['feat']
+        print(graph)
+        print('features shape:', features.shape)
+        if torch.cuda.is_available():
+            device = torch.device("cuda:" + str(args.device))
+        else:
+            device = torch.device("cpu")
+        features = features.to(device)
+        model = AAGNN_M_base(graph, features.shape[1], 256, device)
+        model = model.to(device)
+        opt = torch.optim.Adam(model.parameters(), lr=args.lr)
+        #获取伪标签下的正常样本
+        mask = model.mask_label(features, 0.5)
+        writer = SummaryWriter(log_dir=args.logdir)
+        model.train()
+        for epoch in range(args.num_epoch):
+            out = model(features)
+            loss = model.loss_fun(out, mask, model, 0.0001, device)
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            predict_score = model.anomaly_score(out)
+            print("Epoch:", '%04d' % (epoch), "train_loss=", "{:.5f}".format(loss.item(
+            )))
+            writer.add_scalars(
+                "loss",
+                {"loss": loss},
+                epoch,
+            )
+            final_score, a_score, s_score = dataset.evalution(predict_score)
+            writer.add_scalars(
+                "auc",
+                {"final": final_score, "structural": s_score, "attribute": a_score},
+                epoch,
+            )
+            writer.flush()
+
+class AAGNN_M_base(nn.Module):
     def __init__(self, g, in_feats, out_feats, device):
         super().__init__()
         self.line = nn.Linear(in_feats, out_feats).to(device)
