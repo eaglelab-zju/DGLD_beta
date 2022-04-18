@@ -21,9 +21,9 @@ data_path = '../../data/'
 def load_BlogCatalog():
     dataset=BlogCatalogGraphDataset(raw_dir=data_path)
     graph = dataset[0]
-    # add reverse edges
-    srcs, dsts = graph.all_edges()
-    graph.add_edges(dsts, srcs)
+    # # add reverse edges
+    # srcs, dsts = graph.all_edges()
+    # graph.add_edges(dsts, srcs)
     # add self-loop
     print(f"Total edges before adding self-loop {graph.number_of_edges()}")
     graph = graph.remove_self_loop().add_self_loop()
@@ -34,9 +34,9 @@ def load_BlogCatalog():
 def load_Flickr():
     dataset=FlickerGraphDataset(raw_dir=data_path)
     graph = dataset[0]
-    # add reverse edges
-    srcs, dsts = graph.all_edges()
-    graph.add_edges(dsts, srcs)
+    # # add reverse edges
+    # srcs, dsts = graph.all_edges()
+    # graph.add_edges(dsts, srcs)
     # add self-loop
     print(f"Total edges before adding self-loop {graph.number_of_edges()}")
     graph = graph.remove_self_loop().add_self_loop()

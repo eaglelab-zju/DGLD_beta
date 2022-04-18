@@ -19,23 +19,22 @@ if __name__ == '__main__':
     args = get_parse()
     print(args)
     # load dataset
-    dataset = GraphNodeAnomalyDectionDataset(args.dataset)
-    graph = dataset[0]
-    features = graph.ndata['feat']
-    print(features)
-    adj = graph.adj(scipy_fmt='csr')
+    # dataset = GraphNodeAnomalyDectionDataset(args.dataset)
+    # graph = dataset[0]
+    # features = graph.ndata['feat']
+    # print(features)
+    # adj = graph.adj(scipy_fmt='csr')
 
     # 构造原github数据为graph，进行测试
-    # data_mat = sio.loadmat('/home/data/zp/ygm/GCN_AnomalyDetection_pytorch/data/BlogCatalog.mat')
-    # adj = data_mat['Network']
-    # feat = data_mat['Attributes']
-    # truth = data_mat['Label']
-    # truth = truth.flatten()
-    # graph = dgl.from_scipy(adj)
-    # features = torch.FloatTensor(feat.toarray())
+    data_mat = sio.loadmat('/home/data/zp/ygm/GCN_AnomalyDetection_pytorch/data/BlogCatalog.mat')
+    adj = data_mat['Network']
+    feat = data_mat['Attributes']
+    truth = data_mat['Label']
+    truth = truth.flatten()
+    graph = dgl.from_scipy(adj)
+    features = torch.FloatTensor(feat.toarray())
     
     
-
     adj_norm = normalize_adj(adj+sp.eye(adj.shape[0]))
     adj_norm = torch.FloatTensor(adj_norm.toarray())
 
@@ -75,12 +74,12 @@ if __name__ == '__main__':
             {"loss": loss, "struct_loss": struct_loss, "feat_loss": feat_loss},
             epoch,
         )
-        # print('auc:',roc_auc_score(truth,predict_score))
-        final_score, a_score, s_score = dataset.evalution(predict_score)
-        writer.add_scalars(
-            "auc",
-            {"final": final_score, "structural": s_score, "attribute": a_score},
-            epoch,
-        )
+        print('auc:',roc_auc_score(truth,predict_score))
+        # final_score, a_score, s_score = dataset.evalution(predict_score)
+        # writer.add_scalars(
+        #     "auc",
+        #     {"final": final_score, "structural": s_score, "attribute": a_score},
+        #     epoch,
+        # )
 
         writer.flush()
