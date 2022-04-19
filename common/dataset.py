@@ -151,7 +151,8 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         assert is_bidirected(self.dataset) == True
         self.init_anomaly_label(label=y_data)
 
-        if self.dataset_name != 'custom' and y_data != None:
+        if self.dataset_name != 'custom' and y_data == None:
+            print('inject_contextual_anomalies and inject_structural_anomalies')
             self.inject_contextual_anomalies()
             self.inject_structural_anomalies()
 
