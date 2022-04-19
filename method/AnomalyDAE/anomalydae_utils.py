@@ -9,28 +9,37 @@ from tqdm import tqdm
 import numpy as np
 import torch
 
-from models import Dominant
-from utils.print import cprint, lcprint
 
 
 def get_parse():
     parser = argparse.ArgumentParser(
-        description='Deep Anomaly Detection on Attributed Networks')
+        description='AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks')
     # "Cora", "Pubmed", "Citeseer"
     parser.add_argument('--dataset', type=str, default='Cora')
-    parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--seed', type=int, default=42)
     # max min avg  weighted_sum
     parser.add_argument('--logdir', type=str, default='tmp')
-    parser.add_argument('--hidden_dim', type=int, default=64,
-                        help='dimension of hidden embedding (default: 64)')
+    parser.add_argument('--embed_dim', type=int, default=256,
+                        help='dimension of hidden embedding (default: 256)')
+    parser.add_argument('--out_dim', type=int, default=128,
+                        help='dimension of output embedding (default: 128)')
     parser.add_argument('--num_epoch', type=int,
                         default=100, help='Training epoch')
-    parser.add_argument('--lr', type=float, default=5e-3, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--dropout', type=float,
-                        default=0.3, help='Dropout rate')
-    parser.add_argument('--alpha', type=float, default=0.8,
+                        default=0.0, help='Dropout rate')
+    parser.add_argument('--weight_decay', type=float,
+                        default=1e-5, help='weight decay')
+    parser.add_argument('--alpha', type=float, default=0.7,
                         help='balance parameter')
+    parser.add_argument('--eta', type=float, default=5.0,
+                        help='Attribute penalty balance parameter')
+    parser.add_argument('--theta', type=float, default=40.0,
+                        help='structure penalty balance parameter')
+
     parser.add_argument('--device', type=int, default=0)
+
+
 
     args = parser.parse_args()
 
@@ -58,14 +67,25 @@ def get_parse():
     return args
 
 
-def loss_func(adj, A_hat, attrs, X_hat, alpha):
+def loss_func(adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
+    # structure penalty
+    # reversed_adj=torch.ones(adj.shape).to(device)-adj
+    # thetas=torch.where(reversed_adj>0,reversed_adj,torch.full(adj.shape,theta).to(device))
+    thetas=adj*(theta-1)+1
+
+    # Attribute penalty
+    # reversed_attr=torch.ones(attrs.shape).to(device)-attrs
+    # etas=torch.where(reversed_attr==1,reversed_attr,torch.full(attrs.shape,eta).to(device))
+    etas=attrs*(eta-1)+1
+
     # Attribute reconstruction loss
-    diff_attribute = torch.pow(X_hat - attrs, 2)
+    diff_attribute = torch.pow(X_hat - attrs, 2) * etas
     attribute_reconstruction_errors = torch.sqrt(torch.sum(diff_attribute, 1))
     attribute_cost = torch.mean(attribute_reconstruction_errors)
 
     # structure reconstruction loss
-    diff_structure = torch.pow(A_hat - adj, 2)
+    thetas = adj * (theta-1) + 1 
+    diff_structure = torch.pow(A_hat - adj, 2) * thetas
     structure_reconstruction_errors = torch.sqrt(torch.sum(diff_structure, 1))
     structure_cost = torch.mean(structure_reconstruction_errors)
 
@@ -75,26 +95,25 @@ def loss_func(adj, A_hat, attrs, X_hat, alpha):
     return cost, structure_cost, attribute_cost
 
 
-def train_step(args, model, optimizer, graph, features, adj,adj_label):
+def train_step(args, model, optimizer, graph, features, adj,adj_label,device):
 
     model.train()
     optimizer.zero_grad()
     A_hat, X_hat = model(graph, features)
     # A_hat, X_hat = model(features,adj)
     loss, struct_loss, feat_loss = loss_func(
-        adj_label, A_hat, features, X_hat, args.alpha)
+        adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
     l = torch.mean(loss)
     l.backward()
     optimizer.step()
     return l, struct_loss, feat_loss
-    # print("Epoch:", '%04d' % (epoch), "train_loss=", "{:.5f}".format(l.item()), "train/struct_loss=", "{:.5f}".format(struct_loss.item()),"train/feat_loss=", "{:.5f}".format(feat_loss.item()))
 
 
-def test_step(args, model, graph, features, adj,adj_label):
+def test_step(args, model, graph, features, adj,adj_label,device):
     model.eval()
     A_hat, X_hat = model(graph, features)
     # A_hat, X_hat = model(features,adj)
-    loss, _, _ = loss_func(adj_label, A_hat, features, X_hat, args.alpha)
+    loss, _, _ = loss_func(adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
     score = loss.detach().cpu().numpy()
     # print("Epoch:", '%04d' % (epoch), 'Auc', roc_auc_score(label, score))
     return score
