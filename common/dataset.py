@@ -96,7 +96,27 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
     BlogCatalog, Flickr, ACM, Cora, Citeseer, Pubmed and ogbn-arxiv, respectively.
     """
 
-    def __init__(self, name="Cora", p=15, k=50, cola_preprocess_features=True):
+    def __init__(self, name="Cora", p=15, k=50, cola_preprocess_features=True, g_data=None, y_data=None):
+        r"""
+        Parameter
+        ---------
+        name:
+        when name == 'custom', using custom data and please Specify custom data by g_data.
+        and Specify label by y_data. [BlogCatalog, Flickr, Cora, Citeseer, Pubmed and ogbn-arxiv] is supported default follow CoLA.
+        
+        p and k :
+        and anomaly injection hyperparameter follow CoLA
+
+        cola_preprocess_features: 
+        follow the same preprocess as CoLA, default:True
+
+        g_data:
+        Specify custom data by g_data.
+
+        y_data:
+        Specify custom label by g_data.
+
+        """
         super().__init__(name=name)
         self.dataset_name = name
         self.cola_preprocess_features = cola_preprocess_features
@@ -119,16 +139,22 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "BlogCatalog":"load_BlogCatalog()",
             "Flickr":"load_Flickr()"
         }
+        if self.dataset_name != 'custom':
+            assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map, self.dataset_name
+            self.q = self.q_map[name]
+            self.k = k
+            self.seed = 42
+            self.dataset = eval(self.dataset_map[self.dataset_name])[0]
+        else:
+            self.dataset = g_data
 
-        assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map, self.dataset_name
-        self.q = self.q_map[name]
-        self.k = k
-        self.seed = 42
-        self.dataset = eval(self.dataset_map[self.dataset_name])[0]
         assert is_bidirected(self.dataset) == True
-        self.init_anomaly_label()
-        self.inject_contextual_anomalies()
-        self.inject_structural_anomalies()
+        self.init_anomaly_label(label=y_data)
+
+        if self.dataset_name != 'custom' and y_data != None:
+            self.inject_contextual_anomalies()
+            self.inject_structural_anomalies()
+
         if self.cola_preprocess_features:
             print('preprocess_features as CoLA')
             self.dataset.ndata['feat'] = self.preprocess_features(self.dataset.ndata['feat'])
@@ -180,9 +206,12 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
     def set_anomaly_label(self, label):
         self.dataset.ndata["anomaly_label"] = label
 
-    def init_anomaly_label(self):
+    def init_anomaly_label(self, label=None):
         number_node = self.dataset.num_nodes()
-        self.dataset.ndata["anomaly_label"] = torch.zeros(number_node)
+        if label != None:
+            self.dataset.ndata["anomaly_label"] = label# torch.zeros(number_node)
+        else:
+            self.dataset.ndata["anomaly_label"] = torch.zeros(number_node)
 
     def reset_anomaly_label(self):
         self.init_anomaly_label()
@@ -477,10 +506,15 @@ class BlogCatalogGraphDataset(DGLDataset):
         return 1
 
 
-
-
+def test_cutom_dataset():
+    my_g = dgl.data.CoraGraphDataset()[0]
+    label = torch.ones(my_g.num_nodes())
+    dataset = GraphNodeAnomalyDectionDataset('custom', g_data=my_g, y_data=label)
+    print("num_anomaly:", dataset.num_anomaly)
+    print("anomaly_label", dataset.anomaly_label)
 
 if __name__ == "__main__":
+    test_cutom_dataset()
     data_path = '../data/'
     well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr", "ogbn-arxiv"]
     num_nodes_list = []
@@ -488,6 +522,7 @@ if __name__ == "__main__":
     num_anomaly_list = []
     num_attributes_list = []
     random_evaluation_list = []
+    
     for data_name in well_test_dataset:
         print("\ndataset:", data_name)
         dataset = GraphNodeAnomalyDectionDataset(data_name)
@@ -500,6 +535,8 @@ if __name__ == "__main__":
         num_anomaly_list.append(dataset.num_anomaly.item())
         num_attributes_list.append(dataset.dataset.ndata['feat'].shape[1])
         random_evaluation_list.append(final_score)
+
+
     dataset_info = pd.DataFrame({
         "well_test_dataset":well_test_dataset,
         "num_nodes":num_nodes_list,
