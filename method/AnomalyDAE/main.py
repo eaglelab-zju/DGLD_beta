@@ -82,12 +82,12 @@ if __name__ == '__main__':
             {"loss": loss, "struct_loss": struct_loss, "feat_loss": feat_loss},
             epoch,
         )
-        # print('auc:',roc_auc_score(truth,predict_score))
-        final_score, a_score, s_score = dataset.evalution(predict_score)
-        writer.add_scalars(
-            "auc",
-            {"final": final_score, "structural": s_score, "attribute": a_score},
-            epoch,
-        )
+        print('auc:',roc_auc_score(truth,predict_score))
+        # final_score, a_score, s_score = dataset.evalution(predict_score)
+        # writer.add_scalars(
+        #     "auc",
+        #     {"final": final_score, "structural": s_score, "attribute": a_score},
+        #     epoch,
+        # )
 
         writer.flush()
