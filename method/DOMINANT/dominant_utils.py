@@ -31,6 +31,7 @@ def get_parse():
     parser.add_argument('--alpha', type=float, default=0.8,
                         help='balance parameter')
     parser.add_argument('--device', type=int, default=0)
+    parser.add_argument('--no_cuda', action='store_true')
 
     args = parser.parse_args()
 
