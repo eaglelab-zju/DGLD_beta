@@ -122,7 +122,7 @@ class StructureAE(nn.Module):
         x = F.dropout(x, self.dropout)
         embed_x = self.attention_layer(g, x).squeeze(1) #(n,emd_dim)
         # decoder
-        x = torch.relu(embed_x @ embed_x.T) #(n,n)
+        x = torch.sigmoid(embed_x @ embed_x.T) #(n,n)
         return x, embed_x
 
 

@@ -19,27 +19,27 @@ from common.dataset import GraphNodeAnomalyDectionDataset
 if __name__ == '__main__':
     args = get_parse()
     print(args)
-    # load dataset
-    dataset = GraphNodeAnomalyDectionDataset(args.dataset)
-    graph = dataset[0]
-    features = graph.ndata['feat']
-    print(features)
-    adj = graph.adj(scipy_fmt='csr')
+    # # load dataset
+    # dataset = GraphNodeAnomalyDectionDataset(args.dataset)
+    # graph = dataset[0]
+    # features = graph.ndata['feat']
+    # print(features)
+    # adj = graph.adj(scipy_fmt='csr')
 
-    # # 构造原github数据为graph，进行测试
-    # data_mat = sio.loadmat('/home/data/zp/ygm/AnomalyDAE/data/BlogCatalog/BlogCatalog.mat')
-    # adj = data_mat['Network']
-    # feat = data_mat['Attributes']
-    # truth = data_mat['Label']
-    # truth = truth.flatten()
-    # graph = dgl.from_scipy(adj)
-    # features = torch.FloatTensor(feat.toarray())
+    # 构造原github数据为graph，进行测试
+    data_mat = sio.loadmat('/home/data/zp/ygm/AnomalyDAE/data/BlogCatalog/BlogCatalog.mat')
+    adj = data_mat['Network']
+    feat = data_mat['Attributes']
+    truth = data_mat['Label']
+    truth = truth.flatten()
+    graph = dgl.from_scipy(adj)
+    features = torch.FloatTensor(feat.toarray())
     
     # data preprocess
-    # adj_norm = normalize_adj(adj+sp.eye(adj.shape[0]))
-    adj_norm = normalize_adj(adj)
+    adj_norm = normalize_adj(adj+sp.eye(adj.shape[0]))
+    # adj_norm = normalize_adj(adj)
     adj_norm = torch.FloatTensor(adj_norm.toarray())
-    adj = adj# + sp.eye(adj.shape[0])
+    adj = adj + sp.eye(adj.shape[0])
     print(np.sum(adj))
     adj_label = torch.FloatTensor(adj.toarray())
 
@@ -55,16 +55,20 @@ if __name__ == '__main__':
 
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,weight_decay=args.weight_decay)
-
-    if torch.cuda.is_available():
+    
+    if torch.cuda.is_available() and not args.no_cuda:
         device = torch.device("cuda:" + str(args.device))
-        model = model.to(device)
-        graph = graph.to(device)
-        features = features.to(device)
-        adj_label = adj_label.to(device)
-        adj_norm = adj_norm.to(device)
+        
+        print('Using gpu!!!')
     else:
         device = torch.device("cpu")
+        print('Using cpu!!!')
+
+    model = model.to(device)
+    graph = graph.to(device)
+    features = features.to(device)
+    adj_label = adj_label.to(device)
+    adj_norm = adj_norm.to(device)
 
     writer = SummaryWriter(log_dir=args.logdir)
     for epoch in range(args.num_epoch):
