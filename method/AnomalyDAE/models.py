@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dgl.nn.pytorch import GATConv
 from torch import nn
+import dgl
 
 
 def init_weights(module: nn.Module) -> None:
@@ -60,7 +61,7 @@ class AnomalyDAE(nn.Module):
                  act):
         super(AnomalyDAE, self).__init__()
         self.structure_AE = StructureAE(in_feat_dim, embed_dim,
-                                        out_dim, dropout, act)
+                                        out_dim, dropout)
         self.attribute_AE = AttributeAE(in_num_dim, embed_dim,
                                         out_dim, dropout, act)
 
@@ -106,19 +107,17 @@ class StructureAE(nn.Module):
                  in_dim,
                  embed_dim,
                  out_dim,
-                 dropout,
-                 act):
+                 dropout):
         super(StructureAE, self).__init__()
         self.dense = nn.Linear(in_dim, embed_dim) #(n,feat_dim)->(n,emd_dim)
         self.attention_layer = GATConv(embed_dim, out_dim,num_heads=1)
         self.dropout = dropout
-        self.act = act
         for module in self.modules():
             init_weights(module)
 
     def forward(self,g,x):
         # encoder
-        x = self.act(self.dense(x))
+        x = torch.relu(self.dense(x))
         x = F.dropout(x, self.dropout)
         embed_x = self.attention_layer(g, x).squeeze(1) #(n,emd_dim)
         # decoder

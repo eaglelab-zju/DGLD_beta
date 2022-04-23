@@ -32,7 +32,10 @@ if __name__ == '__main__':
     feat = data_mat['Attributes']
     truth = data_mat['Label']
     truth = truth.flatten()
+    print(np.sum(adj))
     graph = dgl.from_scipy(adj)
+    graph=dgl.add_self_loop(graph)
+    print('loop graph:\n',graph)
     features = torch.FloatTensor(feat.toarray())
     
     # data preprocess
@@ -40,10 +43,9 @@ if __name__ == '__main__':
     # adj_norm = normalize_adj(adj)
     adj_norm = torch.FloatTensor(adj_norm.toarray())
     adj = adj + sp.eye(adj.shape[0])
-    print(np.sum(adj))
     adj_label = torch.FloatTensor(adj.toarray())
 
-    print(graph)
+    # print(graph)
     print('adj_label shape:', adj_label.shape)
     print('features shape:', features.shape)
     
