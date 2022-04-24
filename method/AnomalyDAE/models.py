@@ -5,7 +5,7 @@ reference:https://github.com/pygod-team/pygod/blob/main/pygod/models/anomalydae.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dgl.nn.pytorch import GATConv,GATConv1
+from dgl.nn.pytorch import GATConv#,GATConv1
 from torch import nn
 import dgl
 
