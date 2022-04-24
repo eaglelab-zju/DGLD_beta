@@ -3,12 +3,14 @@ from ast import arg
 import imp
 import sys
 import numpy as np
-from sklearn.metrics import roc_auc_score
+
+from sklearn.metrics import precision_score, roc_auc_score
 sys.path.append('../../')
 
 import scipy.sparse as sp
 import scipy.io as sio
 import torch
+torch.set_printoptions(precision=8)
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import dgl
@@ -28,6 +30,7 @@ if __name__ == '__main__':
 
     # 构造原github数据为graph，进行测试
     data_mat = sio.loadmat('/home/data/zp/ygm/AnomalyDAE/data/BlogCatalog/BlogCatalog.mat')
+   
     adj = data_mat['Network']
     feat = data_mat['Attributes']
     truth = data_mat['Label']
@@ -37,7 +40,8 @@ if __name__ == '__main__':
     graph=dgl.add_self_loop(graph)
     print('loop graph:\n',graph)
     features = torch.FloatTensor(feat.toarray())
-    
+    print('features[1]',features[1])
+
     # data preprocess
     adj_norm = normalize_adj(adj+sp.eye(adj.shape[0]))
     # adj_norm = normalize_adj(adj)
@@ -53,7 +57,7 @@ if __name__ == '__main__':
     num_nodes=features.shape[0]
 
     model = AnomalyDAE(in_feat_dim=feat_dim,in_num_dim=num_nodes,embed_dim=args.embed_dim,
-                        out_dim=args.out_dim,dropout=args.dropout,act=torch.sigmoid)
+                        out_dim=args.out_dim,dropout=args.dropout)
 
     print(model)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,weight_decay=args.weight_decay)
@@ -74,7 +78,7 @@ if __name__ == '__main__':
 
     writer = SummaryWriter(log_dir=args.logdir)
     for epoch in range(args.num_epoch):
-        loss, struct_loss, feat_loss = train_step(
+        loss, struct_loss, feat_loss,_ = train_step(
             args, model, optimizer, graph, features, adj_norm,adj_label,device)
         predict_score = test_step(args, model, graph, features,adj_norm, adj_label,device)
         print("Epoch:", '%04d' % (epoch), "train_loss=", "{:.5f}".format(loss.item(
