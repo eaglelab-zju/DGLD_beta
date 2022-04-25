@@ -9,7 +9,8 @@ import numpy as np
 import dgl
 import os
 current_file_name = __file__
-data_path = os.path.dirname(os.path.dirname(os.path.abspath(current_file_name)))+'/data/'
+current_dir=os.path.dirname(os.path.dirname(os.path.abspath(current_file_name)))
+data_path =current_dir +'/data/'
 print('data_path:',data_path)
 
 def ranknorm(input_arr):
@@ -55,7 +56,7 @@ def is_bidirected(g):
     return allclose(src1, dst2) and allclose(src2, dst1)
 
 def load_ogbn_arxiv():
-    data = DglNodePropPredDataset(name="ogbn-arxiv")
+    data = DglNodePropPredDataset(name="ogbn-arxiv",root=current_dir+'common/dataset/')
     graph, _ = data[0]
     # add reverse edges
     srcs, dsts = graph.all_edges()
@@ -147,4 +148,4 @@ cd CoLA
 python main.py --dataset ACM
 """
 if __name__ == "__main__":
-    load_BlogCatalog()
+    load_ogbn_arxiv()
