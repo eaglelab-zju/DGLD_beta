@@ -15,40 +15,10 @@ import scipy.io as sio
 from dgl import backend as F
 import sys
 sys.path.append('..')
-from common.utils import is_bidirected, load_ogbn_arxiv#, load_ACM, load_BlogCatalog, load_Flickr
-data_path = '../../data/'
+from common.utils import is_bidirected, load_ogbn_arxiv, load_BlogCatalog, load_Flickr#,load_ACM
+
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
-def load_BlogCatalog():
-    dataset=BlogCatalogGraphDataset(raw_dir=data_path)
-    graph = dataset[0]
-    # # add reverse edges
-    # srcs, dsts = graph.all_edges()
-    # graph.add_edges(dsts, srcs)
-    # add self-loop
-    print(f"Total edges before adding self-loop {graph.number_of_edges()}")
-    graph = graph.remove_self_loop().add_self_loop()
-    
-    print(f"Total edges after adding self-loop {graph.number_of_edges()}")
-    assert is_bidirected(graph) == True
-    return [graph]
-
-def load_Flickr():
-    dataset=FlickerGraphDataset(raw_dir=data_path)
-    graph = dataset[0]
-    # # add reverse edges
-    # srcs, dsts = graph.all_edges()
-    # graph.add_edges(dsts, srcs)
-    # add self-loop
-    print(f"Total edges before adding self-loop {graph.number_of_edges()}")
-    graph = graph.remove_self_loop().add_self_loop()
-    print(f"Total edges after adding self-loop {graph.number_of_edges()}")
-    assert is_bidirected(graph) == True
-    return [graph]
-    
-
-def load_ACM():
-    raise NotImplementedError
 
 def split_auc(groundtruth, prob):
     r"""
@@ -361,56 +331,6 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
     def __len__(self):
         return 0
 
-class ACMGraphDataset(DGLDataset):
-    """ACM citation network dataset.It is a citation network where each paper 
-    is regarded as a node on the network, and the links are the citation 
-    relations among different papers. The attributes of each paper are 
-    generated from the paper abstract.
-    
-    From:
-
-    Parameters
-    ----------
-    raw_dir : str
-        指定下载数据的存储目录或已下载数据的存储目录。默认: ~/.dgl/
-    verbose : bool
-        是否打印进度信息。
-    """
-    def __init__(self,
-                 raw_dir=None,
-                 verbose=True):
-        super(ACMGraphDataset, self).__init__(name='ACM',
-                                        raw_dir=raw_dir,
-                                        verbose=verbose)
-        self.raw_dir=raw_dir
-        self.verbose=verbose
-
-    def process(self):
-        mat_path =self.raw_dir
-        data_mat = sio.loadmat(mat_path)
-        adj = data_mat['Network']
-        feat = data_mat['Attributes']
-        truth = data_mat['Label']
-        truth = truth.flatten()
-        self._g=dgl.from_scipy(adj)
-        self._g.ndata['feat']=torch.from_numpy(feat.toarray()).to(torch.float32)
-        self._g.ndata['label']=torch.from_numpy(truth).to(torch.float32)
-        self.num_classes=len(np.unique(truth))
-
-        if self.verbose:
-            print('  NumNodes: {}'.format(self._g.number_of_nodes()))
-            print('  NumEdges: {}'.format(self._g.number_of_edges()))
-            print('  NumFeats: {}'.format(self._g.ndata['feat'].shape[1]))
-            print('  NumClasses: {}'.format(self.num_classes))
-
-
-    def __getitem__(self, idx):
-        assert idx == 0, "这个数据集里只有一个图"
-        return self.graph
-
-    def __len__(self):
-        return 1
-
 class FlickerGraphDataset(DGLDataset):
     """Flickr is an image hosting and sharing website. Similar to BlogCatalog,
      users can follow each other and form a social network. Node attributes of 
@@ -458,53 +378,6 @@ class FlickerGraphDataset(DGLDataset):
     def __len__(self):
         return 1
 
-class BlogCatalogGraphDataset(DGLDataset):
-    """BlogCatalog is a blog sharing web- site. The bloggers in blogcatalog 
-    can follow each other forming a social network. Users are associ- ated 
-    with a list of tags to describe themselves and their blogs, which are regarded as node attributes.
-    
-    From:https://github.com/GRAND-Lab/CoLA/blob/main/raw_dataset/BlogCatalog/BlogCatalog.mat
-
-    Parameters
-    ----------
-    raw_dir : str
-        指定下载数据的存储目录或已下载数据的存储目录。默认: ~/.dgl/
-    verbose : bool
-        是否打印进度信息。
-    """
-    def __init__(self,
-                 raw_dir=None,
-                 verbose=True):
-        super(BlogCatalogGraphDataset, self).__init__(name='BlogCatalog',
-                                        raw_dir=raw_dir,
-                                        verbose=verbose)
-
-    def process(self):
-        mat_path =self.raw_path + '.mat'
-        
-        data_mat = sio.loadmat(mat_path)
-        adj = data_mat['Network']
-        feat = data_mat['Attributes']
-        feat = preprocessing.normalize(feat, axis=0)
-        truth = data_mat['Label']
-        truth = truth.flatten()
-        self._g=dgl.from_scipy(adj)
-        self._g.ndata['feat']=torch.from_numpy(feat.toarray()).to(torch.float32)
-        self._g.ndata['label']=torch.from_numpy(truth).to(torch.float32)
-        self.num_classes=len(np.unique(truth))
-
-        if self.verbose:
-            print('  NumNodes: {}'.format(self._g.number_of_nodes()))
-            print('  NumEdges: {}'.format(self._g.number_of_edges()))
-            print('  NumFeats: {}'.format(self._g.ndata['feat'].shape[1]))
-            print('  NumClasses: {}'.format(self.num_classes))
-
-    def __getitem__(self, idx):
-        assert idx == 0, "这个数据集里只有一个图"
-        return self._g
-
-    def __len__(self):
-        return 1
 
 
 def test_cutom_dataset():
@@ -517,7 +390,7 @@ def test_cutom_dataset():
 if __name__ == "__main__":
     test_cutom_dataset()
     data_path = '../data/'
-    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr", "ogbn-arxiv"]
+    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr"]#, "ogbn-arxiv"]
     num_nodes_list = []
     num_edges_list = []
     num_anomaly_list = []
