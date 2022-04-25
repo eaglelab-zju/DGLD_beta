@@ -7,9 +7,10 @@ from sklearn import preprocessing
 import scipy.io as sio
 import numpy as np
 import dgl
-import inspect,os
-current_file_name = inspect.getfile(inspect.currentframe())
-data_path = os.path.abspath(os.path.dirname(os.path.dirname(current_file_name)))+'/data/'
+import os
+current_file_name = __file__
+data_path = os.path.dirname(os.path.dirname(os.path.abspath(current_file_name)))+'/data/'
+print('data_path:',data_path)
 
 def ranknorm(input_arr):
     r"""
@@ -146,4 +147,4 @@ cd CoLA
 python main.py --dataset ACM
 """
 if __name__ == "__main__":
-    load_ogbn_arxiv()
+    load_BlogCatalog()
