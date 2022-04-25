@@ -7,8 +7,9 @@ from sklearn import preprocessing
 import scipy.io as sio
 import numpy as np
 import dgl
-# sys.path.append('..')
-data_path = '../data/'
+import inspect,os
+current_file_name = inspect.getfile(inspect.currentframe())
+data_path = os.path.abspath(os.path.dirname(os.path.dirname(current_file_name)))+'/data/'
 
 def ranknorm(input_arr):
     r"""
@@ -129,7 +130,7 @@ def load_Flickr():
     -------
     list
         [graph]
-        
+
     Using
     -------
     >>> graph=load_Flickr()[0]
