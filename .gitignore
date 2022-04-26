@@ -21,3 +21,6 @@ method/infoNCECoLA
 method/info-SL-GAD
 .gitignore
 data/*_dgld.mat
+data/*_pygod.mat
+data/attr-graphs
+data/ogbn_arxiv
