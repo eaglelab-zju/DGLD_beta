@@ -56,7 +56,8 @@ def is_bidirected(g):
     return allclose(src1, dst2) and allclose(src2, dst1)
 
 def load_ogbn_arxiv():
-    data = DglNodePropPredDataset(name="ogbn-arxiv",root=current_dir+'common/dataset/')
+    print(current_dir+'/common/dataset/')
+    data = DglNodePropPredDataset(name="ogbn-arxiv",root=current_dir+'/common/dataset/')
     graph, _ = data[0]
     # add reverse edges
     srcs, dsts = graph.all_edges()

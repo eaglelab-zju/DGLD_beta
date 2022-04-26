@@ -390,7 +390,7 @@ def test_cutom_dataset():
 if __name__ == "__main__":
     test_cutom_dataset()
     data_path = '../data/'
-    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr"]#, "ogbn-arxiv"]
+    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr", "ogbn-arxiv"]
     num_nodes_list = []
     num_edges_list = []
     num_anomaly_list = []
