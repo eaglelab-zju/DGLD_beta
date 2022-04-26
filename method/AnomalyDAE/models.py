@@ -5,8 +5,9 @@ reference:https://github.com/pygod-team/pygod/blob/main/pygod/models/anomalydae.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dgl.nn.pytorch import GATConv
+from dgl.nn.pytorch import GATConv#,GATConv1
 from torch import nn
+import dgl
 
 
 def init_weights(module: nn.Module) -> None:
@@ -57,12 +58,12 @@ class AnomalyDAE(nn.Module):
                  embed_dim,
                  out_dim,
                  dropout,
-                 act):
+                 ):
         super(AnomalyDAE, self).__init__()
         self.structure_AE = StructureAE(in_feat_dim, embed_dim,
-                                        out_dim, dropout, act)
+                                        out_dim, dropout)
         self.attribute_AE = AttributeAE(in_num_dim, embed_dim,
-                                        out_dim, dropout, act)
+                                        out_dim, dropout)
 
     def forward(self,g,x):
         A_hat, embed_x = self.structure_AE(g, x)
@@ -106,26 +107,23 @@ class StructureAE(nn.Module):
                  in_dim,
                  embed_dim,
                  out_dim,
-                 dropout,
-                 act):
+                 dropout):
         super(StructureAE, self).__init__()
         self.dense = nn.Linear(in_dim, embed_dim) #(n,feat_dim)->(n,emd_dim)
         self.attention_layer = GATConv(embed_dim, out_dim,num_heads=1)
         self.dropout = dropout
-        self.act = act
         for module in self.modules():
             init_weights(module)
 
     def forward(self,g,x):
         # encoder
-        x = self.act(self.dense(x))
+        x = torch.relu(self.dense(x))
         x = F.dropout(x, self.dropout)
-        embed_x = self.attention_layer(g, x).squeeze(1) #(n,emd_dim)
+        embed_x = self.attention_layer(g, x).squeeze(1) #(n,128)
+        # print(embed_x)
         # decoder
-        x = torch.relu(embed_x @ embed_x.T) #(n,n)
+        x = torch.sigmoid(embed_x @ embed_x.T) #(n,n)
         return x, embed_x
-
-
 
 class AttributeAE(nn.Module):
     """
@@ -159,13 +157,11 @@ class AttributeAE(nn.Module):
                  in_dim,
                  embed_dim,
                  out_dim,
-                 dropout,
-                 act):
+                 dropout):
         super(AttributeAE, self).__init__()
         self.dense1 = nn.Linear(in_dim, embed_dim) #(feat_dim,n)->(feat_dim,emd_dim)
         self.dense2 = nn.Linear(embed_dim, out_dim)
         self.dropout = dropout
-        self.act = act
         for module in self.modules():
             init_weights(module)
 
@@ -173,13 +169,13 @@ class AttributeAE(nn.Module):
                 x,
                 struct_embed):
         # encoder
-        x = self.act(self.dense1(x.T))
+        x = torch.relu(self.dense1(x.T))#(d,256)
         x = F.dropout(x, self.dropout)
-        x = self.dense2(x)
-        x = F.dropout(x, self.dropout)  #(feat_dim,emd_dim)
+        x = torch.relu(self.dense2(x))#(d,128)
+        x = F.dropout(x, self.dropout)  
         # decoder
-        x = struct_embed @ x.T  #(n,emd_dim) * (emd_dim,feat_dim)
-        return x    #(n,feat_dim)
+        x = struct_embed @ x.T  #(n,128) * (128,d)
+        return x    #(n,d)
 
 
 

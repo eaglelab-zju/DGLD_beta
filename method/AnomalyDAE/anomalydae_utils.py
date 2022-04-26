@@ -1,3 +1,4 @@
+from ast import arg
 import shutil
 import sys
 import scipy.sparse as sp
@@ -8,7 +9,16 @@ import argparse
 from tqdm import tqdm
 import numpy as np
 import torch
+import random
 
+def random_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def get_parse():
@@ -16,7 +26,7 @@ def get_parse():
         description='AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks')
     # "Cora", "Pubmed", "Citeseer"
     parser.add_argument('--dataset', type=str, default='Cora')
-    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--seed', type=int, default=7)
     # max min avg  weighted_sum
     parser.add_argument('--logdir', type=str, default='tmp')
     parser.add_argument('--embed_dim', type=int, default=256,
@@ -29,15 +39,16 @@ def get_parse():
     parser.add_argument('--dropout', type=float,
                         default=0.0, help='Dropout rate')
     parser.add_argument('--weight_decay', type=float,
-                        default=1e-5, help='weight decay')
+                        default=0, help='weight decay')
     parser.add_argument('--alpha', type=float, default=0.7,
                         help='balance parameter')
     parser.add_argument('--eta', type=float, default=5.0,
                         help='Attribute penalty balance parameter')
     parser.add_argument('--theta', type=float, default=40.0,
                         help='structure penalty balance parameter')
-
+    parser.add_argument('--no_cuda', action='store_true')
     parser.add_argument('--device', type=int, default=0)
+    
 
 
 
@@ -64,6 +75,8 @@ def get_parse():
         else:
             args.num_epoch = 10
 
+    random_seed(args.seed)
+
     return args
 
 
@@ -71,21 +84,22 @@ def loss_func(adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
     # structure penalty
     # reversed_adj=torch.ones(adj.shape).to(device)-adj
     # thetas=torch.where(reversed_adj>0,reversed_adj,torch.full(adj.shape,theta).to(device))
-    thetas=adj*(theta-1)+1
+    # thetas=adj*(theta-1)+1
 
     # Attribute penalty
     # reversed_attr=torch.ones(attrs.shape).to(device)-attrs
     # etas=torch.where(reversed_attr==1,reversed_attr,torch.full(attrs.shape,eta).to(device))
-    etas=attrs*(eta-1)+1
+    
 
     # Attribute reconstruction loss
-    diff_attribute = torch.pow(X_hat - attrs, 2) * etas
+    etas=attrs*(eta-1)+1
+    diff_attribute = torch.pow((X_hat - attrs)* etas, 2) 
     attribute_reconstruction_errors = torch.sqrt(torch.sum(diff_attribute, 1))
     attribute_cost = torch.mean(attribute_reconstruction_errors)
 
     # structure reconstruction loss
     thetas = adj * (theta-1) + 1 
-    diff_structure = torch.pow(A_hat - adj, 2) * thetas
+    diff_structure = torch.pow((A_hat - adj)* thetas, 2) 
     structure_reconstruction_errors = torch.sqrt(torch.sum(diff_structure, 1))
     structure_cost = torch.mean(structure_reconstruction_errors)
 
@@ -106,7 +120,7 @@ def train_step(args, model, optimizer, graph, features, adj,adj_label,device):
     l = torch.mean(loss)
     l.backward()
     optimizer.step()
-    return l, struct_loss, feat_loss
+    return l, struct_loss, feat_loss,loss.detach().cpu().numpy()
 
 
 def test_step(args, model, graph, features, adj,adj_label,device):

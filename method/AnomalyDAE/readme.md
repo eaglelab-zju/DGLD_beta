@@ -1,4 +1,4 @@
-# DOMINANT
+# AnomalyDAE
 test datasets on 1080ti:'BlogCatalog','Flickr', 'cora','citeseer'
 ## Usage
 

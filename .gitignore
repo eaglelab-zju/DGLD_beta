@@ -20,3 +20,4 @@ method/DOMINANT/run2.sh
 method/infoNCECoLA
 method/info-SL-GAD
 .gitignore
+data/*_dgld.mat
