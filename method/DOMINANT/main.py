@@ -19,7 +19,7 @@ if __name__ == '__main__':
     args = get_parse()
     print(args)
     # load dataset
-    dataset = GraphNodeAnomalyDectionDataset(args.dataset)
+    dataset = GraphNodeAnomalyDectionDataset(args.dataset,cola_preprocess_features=False)
     graph = dataset[0]
     features = graph.ndata['feat']
     print(features)
@@ -35,10 +35,9 @@ if __name__ == '__main__':
     # features = torch.FloatTensor(feat.toarray())
     
     
-    adj_norm = normalize_adj(adj+sp.eye(adj.shape[0]))
+    adj_norm = normalize_adj(adj)#has added self loop in load data
     adj_norm = torch.FloatTensor(adj_norm.toarray())
 
-    adj = adj + sp.eye(adj.shape[0])
     import numpy as np
     print(np.sum(adj))
     adj_label = torch.FloatTensor(adj.toarray())
