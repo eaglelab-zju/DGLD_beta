@@ -15,7 +15,7 @@ import scipy.io as sio
 from dgl import backend as F
 import sys
 sys.path.append('..')
-from common.utils import is_bidirected, load_ogbn_arxiv, load_BlogCatalog, load_Flickr#,load_ACM
+from common.utils import is_bidirected, load_ogbn_arxiv, load_BlogCatalog, load_Flickr,load_ACM
 
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
@@ -390,7 +390,7 @@ def test_cutom_dataset():
 if __name__ == "__main__":
     test_cutom_dataset()
     data_path = '../data/'
-    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr", "ogbn-arxiv"]
+    well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr","ACM", "ogbn-arxiv"]
     num_nodes_list = []
     num_edges_list = []
     num_anomaly_list = []

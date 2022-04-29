@@ -1,5 +1,5 @@
 # graph dataset not in dgl or ogb
 
-- [ACM](https://github.com/kaize0409/GCN_AnomalyDetection_pytorch/blob/main/data/ACM.mat)
-- [BlogCatalog](https://github.com/GRAND-Lab/CoLA/blob/main/raw_dataset/BlogCatalog/BlogCatalog.mat)
-- [Flickr](https://github.com/GRAND-Lab/CoLA/blob/main/raw_dataset/Flickr/Flickr.mat)
+- [ACM](https://github.com/bdy9527/SDCN/blob/da6bb007b7/data/acm.txt)
+- [BlogCatalog](https://www4.comp.polyu.edu.hk/~xiaohuang/docs/BlogCatalog.mat.zip)
+- [Flickr](https://www4.comp.polyu.edu.hk/~xiaohuang/docs/Flickr.mat.zip)
