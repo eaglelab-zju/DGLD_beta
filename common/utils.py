@@ -205,6 +205,8 @@ def load_BlogCatalog():
     """
     return load_mat_data2dgl(data_path=data_path+'BlogCatalog.mat')
 
+
+
 def load_Flickr():
     """load Flickr dgl graph
 
@@ -219,9 +221,21 @@ def load_Flickr():
     """
     return load_mat_data2dgl(data_path=data_path+'Flickr.mat')
 
+
 def load_ACM():
-    raise NotImplementedError
+    """load ACM dgl graph
+
+    Returns
+    -------
+    list
+        [graph]
     
+    Using
+    -------
+    >>> graph=load_ACM()[0]
+    """
+    return load_mat_data2dgl(data_path=data_path+'ACM.mat')
+
 
 r"""
 cd CoLA
