@@ -81,16 +81,6 @@ def get_parse():
 
 
 def loss_func(adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
-    # structure penalty
-    # reversed_adj=torch.ones(adj.shape).to(device)-adj
-    # thetas=torch.where(reversed_adj>0,reversed_adj,torch.full(adj.shape,theta).to(device))
-    # thetas=adj*(theta-1)+1
-
-    # Attribute penalty
-    # reversed_attr=torch.ones(attrs.shape).to(device)-attrs
-    # etas=torch.where(reversed_attr==1,reversed_attr,torch.full(attrs.shape,eta).to(device))
-    
-
     # Attribute reconstruction loss
     etas=attrs*(eta-1)+1
     diff_attribute = torch.pow((X_hat - attrs)* etas, 2) 
@@ -109,12 +99,11 @@ def loss_func(adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
     return cost, structure_cost, attribute_cost
 
 
-def train_step(args, model, optimizer, graph, features, adj,adj_label,device):
+def train_step(args, model, optimizer, graph, features,adj_label,device):
 
     model.train()
     optimizer.zero_grad()
     A_hat, X_hat = model(graph, features)
-    # A_hat, X_hat = model(features,adj)
     loss, struct_loss, feat_loss = loss_func(
         adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
     l = torch.mean(loss)
@@ -123,10 +112,9 @@ def train_step(args, model, optimizer, graph, features, adj,adj_label,device):
     return l, struct_loss, feat_loss,loss.detach().cpu().numpy()
 
 
-def test_step(args, model, graph, features, adj,adj_label,device):
+def test_step(args, model, graph, features,adj_label,device):
     model.eval()
     A_hat, X_hat = model(graph, features)
-    # A_hat, X_hat = model(features,adj)
     loss, _, _ = loss_func(adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
     score = loss.detach().cpu().numpy()
     # print("Epoch:", '%04d' % (epoch), 'Auc', roc_auc_score(label, score))
