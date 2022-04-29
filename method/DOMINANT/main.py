@@ -33,10 +33,10 @@ if __name__ == '__main__':
     # truth = truth.flatten()
     # graph = dgl.from_scipy(adj)
     # features = torch.FloatTensor(feat.toarray())
-    
-    
-    adj_norm = normalize_adj(adj)#has added self loop in load data
-    adj_norm = torch.FloatTensor(adj_norm.toarray())
+    # adj_norm = normalize_adj(adj+sp.eye(adj.shape[0]))#has added self loop in load data
+    # adj_norm = torch.FloatTensor(adj_norm.toarray())
+    # adj=adj+sp.eye(adj.shape[0])
+
 
     import numpy as np
     print(np.sum(adj))
