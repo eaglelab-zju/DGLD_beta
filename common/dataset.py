@@ -90,6 +90,8 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         super().__init__(name=name)
         self.dataset_name = name
         self.cola_preprocess_features = cola_preprocess_features
+        if name in ['Flickr', 'BlogCatalog', 'Pubmed']:
+            self.cola_preprocess_features = False
         self.p = p
         self.q_map = {
             "BlogCatalog": 10,
