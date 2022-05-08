@@ -1,4 +1,4 @@
-dataset=BlogCatalog
+dataset=Cora
 expname=$dataset"_DOMINANT"
 
 if [ ! -d log  ];then
