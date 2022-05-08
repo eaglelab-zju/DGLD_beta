@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 from  dgl.nn.pytorch import EdgeWeightNorm
+from dgl.nn.pytorch import SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
         super(Discriminator, self).__init__()
@@ -37,6 +39,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         self.conv.set_allow_zero_in_degree(1)
         self.act = nn.PReLU()
         self.reset_parameters()
+        self.pool = AvgPooling()
 
     def reset_parameters(self):
         r"""
@@ -58,23 +61,14 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         if self.bias is not None:
             init.zeros_(self.bias)
 
-    def forward(self, bg, in_feat):
+    def forward(self, bg, in_feat, subgraph_size=4):
+        anchor_embs = bg.ndata['feat'][::4, :].clone()
         # Anonymization
-        unbatchg = dgl.unbatch(bg)
-        unbatchg_list = []
-        anchor_feat_list = []
-        for g in unbatchg:
-            anchor_feat = g.ndata['feat'][0, :].clone()
-            g.ndata['feat'][0, :] = 0
-            unbatchg_list.append(g)
-            anchor_feat_list.append(anchor_feat)
-        
+        bg.ndata['feat'][::4, :] = 0
         # anchor_out
-        anchor_embs = torch.stack(anchor_feat_list, dim=0)
         anchor_out = torch.matmul(anchor_embs, self.weight) + self.bias
         anchor_out = self.act(anchor_out)
-        bg = dgl.batch(unbatchg_list)
-        
+
         in_feat = bg.ndata['feat']
         in_feat = torch.matmul(in_feat, self.weight) 
         # GCN
@@ -86,13 +80,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         h = self.act(h)
         with bg.local_scope():
             # pooling        
-            bg.ndata["h"] = h
-            subgraph_pool_emb = []
-            unbatchg = dgl.unbatch(bg)
-            for g in unbatchg:
-                subgraph_pool_emb.append(torch.mean(g.ndata["h"], dim=0))
-            subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
-        # return subgraph_pool_emb, anchor_out
+            subgraph_pool_emb = self.pool(bg, h)
         return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
 
 
@@ -149,10 +137,4 @@ if __name__ == "__main__":
 
     ans = model(bg, bg.ndata["feat"], bg2, bg2.ndata["feat"])
     print(ans)
-    # g.ndata['feat'] = torch.rand((4, 5))
-    # print(g.ndata['feat'])
-    # subg = dgl.node_subgraph(g, [1,2])
-    # print(subg.ndata['feat'])
-    # subg.ndata['feat'] = torch.zeros((2, 5))
-    # print(subg.ndata['feat'])
-    # print(g.ndata['feat'])
+
