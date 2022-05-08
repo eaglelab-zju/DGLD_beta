@@ -10,6 +10,7 @@ from tqdm import tqdm
 import numpy as np
 import torch
 import random
+import torch.nn.functional as F
 
 def random_seed(seed):
     np.random.seed(seed)
@@ -23,9 +24,9 @@ def random_seed(seed):
 
 def get_parse():
     parser = argparse.ArgumentParser(
-        description='AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks')
-    # "Cora", "Pubmed", "Citeseer"
-    parser.add_argument('--dataset', type=str, default='Cora')
+        description='ComGA: Community-Aware Attributed Graph Anomaly Detection')
+    # "Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr","ACM", "ogbn-arxiv"
+    parser.add_argument('--dataset', type=str, default='BlogCatalog')
     parser.add_argument('--seed', type=int, default=7)
     # max min avg  weighted_sum
     parser.add_argument('--logdir', type=str, default='tmp')
@@ -35,6 +36,8 @@ def get_parse():
                         help='dimension of output embedding (default: 128)')
     parser.add_argument('--num_epoch', type=int,
                         default=100, help='Training epoch')
+    parser.add_argument('--m', type=int,
+                        default=171743, help='num of edges')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--dropout', type=float,
                         default=0.0, help='Dropout rate')
@@ -48,8 +51,9 @@ def get_parse():
                         help='structure penalty balance parameter')
     parser.add_argument('--no_cuda', action='store_true')
     parser.add_argument('--device', type=int, default=0)
-    
-
+    parser.add_argument('--n_enc_1', type=int, default=2000)
+    parser.add_argument('--n_enc_2', type=int, default=500)
+    parser.add_argument('--n_enc_3', type=int, default=128)
 
 
     args = parser.parse_args()
@@ -74,13 +78,22 @@ def get_parse():
             args.num_epoch = 400
         else:
             args.num_epoch = 10
+    #
+    if args.dataset == 'BlogCatalog':
+        args.m=171743
+    # elif args.dataset == ''
 
     random_seed(args.seed)
 
     return args
 
 
-def loss_func(adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
+def loss_func(B,B_hat,z_mean,z_arg,adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
+    num_nodes=adj.shape[0]
+    # community reconstruction loss
+    loss = torch.nn.BCELoss()
+    re_loss=num_nodes * loss(B_hat,B)
+
     # Attribute reconstruction loss
     etas=attrs*(eta-1)+1
     diff_attribute = torch.pow((X_hat - attrs)* etas, 2) 
@@ -93,30 +106,39 @@ def loss_func(adj, A_hat, attrs, X_hat, alpha,eta, theta,device):
     structure_reconstruction_errors = torch.sqrt(torch.sum(diff_structure, 1))
     structure_cost = torch.mean(structure_reconstruction_errors)
 
-    cost = alpha * attribute_reconstruction_errors + \
-        (1-alpha) * structure_reconstruction_errors
+    # kl loss
+    kl_loss = -((0.5 / num_nodes) * torch.mean(torch.sum(1 + 2 * z_arg - torch.pow(z_mean,2)-
+                                                    torch.pow(torch.exp(z_arg),2),1)))
+    
+    reconstruction_errors = (alpha * attribute_reconstruction_errors) +\
+                        (1-alpha)*structure_reconstruction_errors
+    cost = re_loss + 0.1*kl_loss + alpha * attribute_cost + \
+        (1-alpha) * structure_cost
+    
+    return cost, structure_cost, attribute_cost,kl_loss,re_loss,reconstruction_errors
 
-    return cost, structure_cost, attribute_cost
 
-
-def train_step(args, model, optimizer, graph, features,adj_label,device):
+def train_step(args, model, optimizer, graph, features, B,adj_label,device):
 
     model.train()
     optimizer.zero_grad()
-    A_hat, X_hat = model(graph, features)
-    loss, struct_loss, feat_loss = loss_func(
-        adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
+    A_hat, X_hat,B_hat,z,z_a= model(graph,features,B)
+    # A_hat, X_hat = model(features,adj)
+    loss, structure_cost, attribute_cost,kl_loss,re_loss,reconstruction_errors = loss_func(
+        B,B_hat,z,z_a,adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
     l = torch.mean(loss)
     l.backward()
     optimizer.step()
-    return l, struct_loss, feat_loss,loss.detach().cpu().numpy()
+    return l,structure_cost, attribute_cost,kl_loss,re_loss,reconstruction_errors.detach().cpu().numpy()
 
 
-def test_step(args, model, graph, features,adj_label,device):
+def test_step(args, model, graph, features, B,adj_label,device):
     model.eval()
-    A_hat, X_hat = model(graph, features)
-    loss, _, _ = loss_func(adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
-    score = loss.detach().cpu().numpy()
+    A_hat, X_hat,B_hat,z,z_a= model(graph,features,B)
+    # A_hat, X_hat = model(features,adj)
+    loss, structure_cost, attribute_cost,kl_loss,re_loss,reconstruction_errors = loss_func(
+        B,B_hat,z,z_a,adj_label, A_hat, features, X_hat, args.alpha,args.eta, args.theta,device)
+    score = reconstruction_errors.detach().cpu().numpy()
     # print("Epoch:", '%04d' % (epoch), 'Auc', roc_auc_score(label, score))
     return score
 
