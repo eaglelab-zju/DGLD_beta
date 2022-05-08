@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.optim as optim
 import dgl
-
+import joblib
 import shutil
 import sys
 import os
@@ -48,7 +48,6 @@ def get_parse():
     else:
         os.makedirs(args.logdir)
 
-
     if args.lr is None:
         if args.dataset in ['Cora','Citeseer','Pubmed','Flickr']:
             args.lr = 1e-3
@@ -65,7 +64,7 @@ def get_parse():
         elif args.dataset in ['BlogCatalog','Flickr','ACM']:
             args.num_epoch = 400
         else:
-            args.num_epoch = 10
+            args.num_epoch = 20
     
     if args.auc_test_rounds is None:
         if args.dataset != 'ogbn-arxiv':
@@ -147,18 +146,26 @@ def test_epoch(epoch, args, loader, net, device):
     loss_accum = 0
     net.eval()
     predict_scores = []
+    pos_scores = []
+    neg_scores = []
+    losses = []
+    
     for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc="Iteration")):
         pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
-
+        
         loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
+        losses.extend(loss.detach().cpu().numpy())
+        pos_scores.extend(pos_score.detach().cpu().numpy())
+        neg_scores.extend(neg_score.detach().cpu().numpy())
+        
         predict_scores.extend(list((neg_score-pos_score).detach().cpu().numpy()))
         loss = loss.mean()
         loss_accum += loss.item() 
     loss_accum /= (step + 1)
     lcprint('VALID==>epoch', epoch, 'Average valid loss: {:.2f}'.format(loss_accum), color='blue')
-    return np.array(predict_scores)
+    return np.array(predict_scores), np.array(pos_scores), np.array(neg_scores), np.array(losses)
 
     
 def train_model(model, args, train_loader, test_loader, writer, device, pseudo_label_type='gt'):
@@ -166,15 +173,30 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
     model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     criterion = torch.nn.BCEWithLogitsLoss()
     num_epoch = args.num_epoch if pseudo_label_type == 'none' else args.selflabeling_epcohs
+    save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
+    if not os.path.exists(save_path):
+        print(f"create {save_path}")
+        os.makedirs(save_path)
     for epoch in range(num_epoch):
+        
+        
         train_loader.dataset.random_walk_sampling()
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer, pseudo_label_type=pseudo_label_type
         )
         writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
-        predict_score = test_epoch(
+        predict_score, pos_scores, neg_scores, losses = test_epoch(
             epoch, args, test_loader, model, device
         )
+        save_content = {
+            "label": train_loader.dataset.oraldataset.anomaly_label.numpy(),
+            "scores":predict_score,
+            "pos_scores":pos_scores,
+            "neg_scores":neg_scores,
+            "losses":losses,
+        }
+        epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
+        joblib.dump(save_content, epcoh_save_path)
         final_score, a_score, s_score = train_loader.dataset.oraldataset.evalution(predict_score)
         writer.add_scalars(
             "auc-{}".format(pseudo_label_type),
@@ -189,7 +211,7 @@ def multi_round_test(args, test_loader, model, device):
     predict_score_arr = []
     for rnd in range(args.auc_test_rounds):
         test_loader.dataset.random_walk_sampling()
-        predict_score = test_epoch(
+        predict_score, _, _, _ = test_epoch(
             rnd, args, test_loader, model, device
         )
         predict_score_arr.append(list(predict_score))
