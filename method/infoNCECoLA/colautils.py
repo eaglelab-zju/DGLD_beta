@@ -40,6 +40,9 @@ def get_parse():
     parser.add_argument('--global_adg', type=bool, default=True)  
     parser.add_argument('--continue_train', type=bool, default=False)
     parser.add_argument('--reinit', type=bool, default=True)
+    parser.add_argument('--aug_type', type=str, default='add_edge', help='graph augment types')  
+    parser.add_argument('--aug_ratio', type=float, default=0.5)
+
     
     args = parser.parse_args()
 

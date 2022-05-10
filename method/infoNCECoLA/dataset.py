@@ -16,6 +16,8 @@ sys.path.append('../../')
 from common.dataset import GraphNodeAnomalyDectionDataset
 from common.sample import CoLASubGraphSampling, UniformNeighborSampling
 from common.dglAug import ComposeAug,NodeShuffle,AddEdge
+from colautils import get_parse
+args = get_parse()
 
 def safe_add_self_loop(g):
     newg = dgl.remove_self_loop(g)
@@ -45,8 +47,10 @@ class CoLADataSet(DGLDataset):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))
 
     def graph_transform(self, g):
-        # newg = g
-        augmentor = ComposeAug([AddEdge(0.5)])
+        if args.aug_type=='add_edge':
+            augmentor = ComposeAug([AddEdge(args.aug_ratio)])
+        elif args.aug_type=='none':
+            augmentor = lambda x:x
         newg = augmentor(g)
         return newg
 
