@@ -3,6 +3,7 @@ method/CoLA/dataset/*
 *.zip
 t.py
 *.pyc
+*.log
 .vscode/settings.json
 EDA.ipynb
 method/CoLA/log/
@@ -17,7 +18,6 @@ method/CoLA/tmp/
 *__pycache__
 CoLA/
 method/DOMINANT/run2.sh
-method/infoNCECoLA
 method/info-SL-GAD
 .gitignore
 data/*_dgld.mat
