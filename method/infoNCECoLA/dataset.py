@@ -15,7 +15,7 @@ import sys
 sys.path.append('../../')
 from common.dataset import GraphNodeAnomalyDectionDataset
 from common.sample import CoLASubGraphSampling, UniformNeighborSampling
-from common.dglAug import ComposeAug,NodeShuffle,AddEdge
+from common.dglAug import ComposeAug,NodeShuffle,AddEdge,RandomMask
 from colautils import get_parse
 args = get_parse()
 
@@ -49,6 +49,10 @@ class CoLADataSet(DGLDataset):
     def graph_transform(self, g):
         if args.aug_type=='add_edge':
             augmentor = ComposeAug([AddEdge(args.aug_ratio)])
+        elif args.aug_type=='random_mask':
+            augmentor = ComposeAug([RandomMask(args.aug_ratio)])
+        elif args.aug_type=='node_shuffle':
+            augmentor = ComposeAug([NodeShuffle()])
         elif args.aug_type=='none':
             augmentor = lambda x:x
         newg = augmentor(g)
