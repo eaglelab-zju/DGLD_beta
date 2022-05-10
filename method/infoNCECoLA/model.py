@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 from  dgl.nn.pytorch import EdgeWeightNorm
+from dgl.nn.pytorch import SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
         super(Discriminator, self).__init__()
@@ -47,6 +49,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         
         self.act = nn.PReLU()
         self.reset_parameters()
+        self.pool = AvgPooling()
 
     def reset_parameters(self):
         r"""
@@ -69,19 +72,10 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
             init.zeros_(self.bias)
 
     def forward(self, bg, in_feat):
+        anchor_embs = bg.ndata['feat'][::4, :].clone()
         # Anonymization
-        unbatchg = dgl.unbatch(bg)
-        unbatchg_list = []
-        anchor_feat_list = []
-        for g in unbatchg:
-            anchor_feat = g.ndata['feat'][0, :].clone()
-            g.ndata['feat'][0, :] = 0
-            unbatchg_list.append(g)
-            anchor_feat_list.append(anchor_feat)
-        bg = dgl.batch(unbatchg_list)
-        
+        bg.ndata['feat'][::4, :] = 0
         # anchor_out
-        anchor_embs = torch.stack(anchor_feat_list, dim=0)
         anchor_out = torch.matmul(anchor_embs, self.weight) 
         if self.bias_term:
             anchor_out = anchor_out + self.bias
@@ -104,14 +98,9 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         with bg.local_scope():
             # pooling        
             bg.ndata["h"] = h
-            subgraph_pool_emb = []
-            gcn_emb = []
-            unbatchg = dgl.unbatch(bg)
-            for g in unbatchg:
-                subgraph_pool_emb.append(torch.mean(g.ndata["h"], dim=0))
-                gcn_emb.append(g.ndata["h"][0, :])
-            subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
-            gcn_emb = torch.stack(gcn_emb, dim=0)
+            subgraph_pool_emb = self.pool(bg,h)
+            gcn_emb = bg.ndata['h'][::4, :].clone()
+        
         # return subgraph_pool_emb, anchor_out
         subgraph_pool_emb = self.subg2anchor(subgraph_pool_emb)
         gcn_emb = self.gcn2anchor(gcn_emb)
@@ -151,8 +140,22 @@ class CoLAModel(nn.Module):
         # key_emb = torch.cat([pos_emb, neg_emb], dim=0)
         key_emb = neg_emb
         neg_score_all = torch.exp(anchor_emb @ key_emb.T / tau).sum(1)
+        
         neg_score = neg_score_all / neg_score_all.shape[0]
-        loss = -torch.log(pos_score / (neg_score_all+epsison))
+        loss = -torch.log(pos_score / (neg_score_all+epsison))#torch.Size([n_nodes])
+        return loss, pos_score, neg_score
+
+    def aug_infonceloss(self, pos_emb, neg_emb,neg_aug_emb, anchor_emb):
+        tau = self.tau
+        epsison = 0.00001
+        pos_score = torch.exp(torch.sum(pos_emb*anchor_emb, dim=1) / tau)
+        # neg_score = torch.exp(torch.sum(neg_emb*anchor_emb, dim=1) / tau)
+        key_emb = torch.cat([neg_emb, neg_aug_emb], dim=0)
+        # key_emb = neg_emb
+        neg_score_all = torch.exp(anchor_emb @ key_emb.T / tau).sum(1)
+        
+        neg_score = neg_score_all / neg_score_all.shape[0]
+        loss = -torch.log(pos_score / (neg_score_all+epsison))#torch.Size([n_nodes])
         return loss, pos_score, neg_score
 
     def generative_loss(self, anchors_oral, anchors_pred_pos, anchors_pred_neg):
@@ -173,17 +176,22 @@ class CoLAModel(nn.Module):
         anchor_embs = torch.stack(anchor_feat_list, dim=0)
         return anchor_embs
 
-    def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
+    def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat,neg_aug_batchg, neg_aug_feat):
         pos_in_feat = F.dropout(pos_in_feat, 0.2, training=self.training)
         neg_in_feat = F.dropout(neg_in_feat, 0.2, training=self.training)
         anchor_inputs = self.get_anchor_oral_features(pos_batchg, pos_in_feat)
 
+
         pos_pool_emb, pos_anchor_out, pos_gcn_emb = self.gcn(pos_batchg, pos_in_feat)
         neg_pool_emb, neg_anchor_out, neg_gcn_emb = self.gcn(neg_batchg, neg_in_feat)      
+        neg_aug_pool_emb, neg_aug_anchor_out, neg_aug_gcn_emb = self.gcn(neg_aug_batchg, neg_aug_feat)  
+        
         loss_pool, pos_score_pool, neg_score_pool = self.infonceloss( pos_pool_emb,  \
             neg_pool_emb, pos_anchor_out)
-        loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_gcn_emb, \
-            neg_gcn_emb, pos_anchor_out)
+        # loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_gcn_emb, \
+        #     neg_gcn_emb, pos_anchor_out)
+
+
         loss_gen, pos_score_gen, neg_score_gen = self.generative_loss(anchor_inputs, self.attr_mlp(pos_gcn_emb),  self.attr_mlp(neg_gcn_emb))
         # gcn_mapself.attr_mlp 
         beta = self.beta

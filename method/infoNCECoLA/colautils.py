@@ -119,10 +119,12 @@ def get_label_mask(batch_graph):
 def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_label_type='gt'):
     loss_accum = 0
     net.train()
-    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc=pseudo_label_type)):
-        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
+    for step, (pos_subgraph, neg_subgraph,neg_aug_subg) in enumerate(tqdm(loader, desc=pseudo_label_type)):
+        pos_subgraph, neg_subgraph, neg_aug_subg = pos_subgraph.to(device), neg_subgraph.to(device), neg_aug_subg.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
+        neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
+
         optimizer.zero_grad()
         if pseudo_label_type == 'gt':
             mask = get_label_mask(pos_subgraph).to(device)
@@ -132,7 +134,7 @@ def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_l
             mask = get_staticpseudolabel_mask(pos_subgraph).to(device)
         else:
             mask = 1
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
+        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat,neg_aug_subg,neg_augfeat)
         loss = loss * mask
         loss = loss.mean()
         loss.backward()
@@ -147,12 +149,13 @@ def test_epoch(epoch, args, loader, net, device):
     loss_accum = 0
     net.eval()
     predict_scores = []
-    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc="Iteration")):
-        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
+    for step, (pos_subgraph, neg_subgraph,neg_aug_subg) in enumerate(tqdm(loader, desc="Iteration")):
+        pos_subgraph, neg_subgraph, neg_aug_subg = pos_subgraph.to(device), neg_subgraph.to(device), neg_aug_subg.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
+        neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
 
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
+        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat,neg_aug_subg,neg_augfeat)
         predict_scores.extend(list((neg_score-pos_score).detach().cpu().numpy()))
         loss = loss.mean()
         loss_accum += loss.item() 
