@@ -36,6 +36,7 @@ def get_parse():
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--logdir', type=str, default='tmp')  
     parser.add_argument('--pseudotype', type=str, default='pseudo', help='none pseudo fix_pseudo')  
+    parser.add_argument('--score_type', type=str, default='score1', help='score type')  
     
     parser.add_argument('--global_adg', type=bool, default=True)  
     parser.add_argument('--continue_train', type=bool, default=False)
@@ -178,8 +179,6 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
         print(f"create {save_path}")
         os.makedirs(save_path)
     for epoch in range(num_epoch):
-        
-        
         train_loader.dataset.random_walk_sampling()
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer, pseudo_label_type=pseudo_label_type

@@ -1,10 +1,13 @@
 import dgl
+import math
 from dgl.nn.pytorch import GraphConv, GATConv
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
-from  dgl.nn.pytorch import EdgeWeightNorm
+from  dgl.nn.pytorch import EdgeWeightNorm, SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+
+
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
         super(Discriminator, self).__init__()
@@ -38,13 +41,11 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         self.conv = GraphConv(in_feats, out_feats, weight=False, bias=False, norm=self.norm)
         self.conv.set_allow_zero_in_degree(1)
         self.subg2anchor = torch.nn.Sequential(
-            nn.Linear(out_feats, out_feats),
-            # nn.PReLU(),
-            # nn.Linear(out_feats, out_feats)
+            nn.Linear(out_feats, out_feats)
         )
         self.gcn2anchor = torch.nn.Sequential(nn.Linear(out_feats, out_feats))
         self.anchormlp = torch.nn.Sequential(nn.Linear(out_feats, out_feats))
-        
+        self.pool = AvgPooling()
         self.act = nn.PReLU()
         self.reset_parameters()
 
@@ -68,24 +69,15 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         if self.bias is not None:
             init.zeros_(self.bias)
 
-    def forward(self, bg, in_feat):
+    def forward(self, bg, in_feat, subgraph_size=4):
+        bg.ndata['feat'] = in_feat
+        anchor_embs = bg.ndata['feat'][::subgraph_size, :].clone()
         # Anonymization
-        unbatchg = dgl.unbatch(bg)
-        unbatchg_list = []
-        anchor_feat_list = []
-        for g in unbatchg:
-            anchor_feat = g.ndata['feat'][0, :].clone()
-            g.ndata['feat'][0, :] = 0
-            unbatchg_list.append(g)
-            anchor_feat_list.append(anchor_feat)
-        bg = dgl.batch(unbatchg_list)
+        bg.ndata['feat'][::subgraph_size, :] = 0
         
-        # anchor_out
-        anchor_embs = torch.stack(anchor_feat_list, dim=0)
         anchor_out = torch.matmul(anchor_embs, self.weight) 
         if self.bias_term:
             anchor_out = anchor_out + self.bias
-
         anchor_out = self.act(anchor_out)
         
         in_feat = bg.ndata['feat']
@@ -95,23 +87,13 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
             h = self.conv(bg, in_feat, edge_weight=bg.edata['w'])
         else:
             h = self.conv(bg, in_feat)
-
         if self.bias_term:
             h += self.bias
-
         h = self.act(h)
-
         with bg.local_scope():
             # pooling        
-            bg.ndata["h"] = h
-            subgraph_pool_emb = []
-            gcn_emb = []
-            unbatchg = dgl.unbatch(bg)
-            for g in unbatchg:
-                subgraph_pool_emb.append(torch.mean(g.ndata["h"], dim=0))
-                gcn_emb.append(g.ndata["h"][0, :])
-            subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
-            gcn_emb = torch.stack(gcn_emb, dim=0)
+            subgraph_pool_emb = self.pool(bg, h)
+            gcn_emb = h[::subgraph_size, :] 
         # return subgraph_pool_emb, anchor_out
         subgraph_pool_emb = self.subg2anchor(subgraph_pool_emb)
         gcn_emb = self.gcn2anchor(gcn_emb)
@@ -119,49 +101,74 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1),\
             F.normalize(gcn_emb, p=2, dim=1)
 
-def drop_feature(x: torch.Tensor, drop_prob: float) -> torch.Tensor:
-    device = x.device
-    drop_mask = torch.empty((x.size(1),), dtype=torch.float32).uniform_(0, 1) < drop_prob
-    drop_mask = drop_mask.to(device)
-    x = x.clone()
-    x[:, drop_mask] = 0
-    return x
-
-def dropout_feature(x: torch.FloatTensor, drop_prob: float = 0.2) -> torch.FloatTensor:
-    return F.dropout(x, p=1. - drop_prob)
-
 class CoLAModel(nn.Module):
-    def __init__(self, in_feats=300, out_feats=64, global_adg=True, tau=0.5, generative_loss_w=0):
+    def __init__(self, in_feats=300, out_feats=64, global_adg=True, tau=0.5, generative_loss_w=0, score_type="score1"):
         super(CoLAModel, self).__init__()
         self.gcn = OneLayerGCNWithGlobalAdg(in_feats, out_feats, global_adg)
         self.discriminator = Discriminator(out_feats)
         self.tau = tau
         self.beta = generative_loss_w
-
+        self.score_type = score_type
         self.attr_mlp = torch.nn.Sequential(nn.Linear(out_feats, out_feats),
         nn.ReLU(),
         nn.Linear(out_feats, in_feats),
         nn.ReLU())
         
-    def infonceloss(self, pos_emb, neg_emb, anchor_emb):
+    def infonceloss(self, pos_emb, neg_emb, anchor_emb, score_type='score1'):
+        r"""
+        Parameter:
+        ----------
+        \begin{align}
+            x = \sum^{B}_{j=1}{e^{\widetilde{eg}_{j}^{T}z_{i}/\tau}}, y=e^{eg_{i}^{l}z_{i}}
+        \end{align}
+
+        score1:
+        -------
+        \begin{align}
+            score1 = x / B - y
+        \end{align}
+
+        scoreloss:
+        ----------
+        \begin{align}
+            score_{loss} = -log(y/x) = logx - logy
+        \end{align}
+
+        scorelossfixbatch:
+        ------------------
+        \begin{align}
+            score_{loss2} = -log(y/(\frac{1}{B}x)) = logx - logy - logB
+        \end{align}
+
+        score2:
+        -------
+        \begin{align}
+            score_{loss3} = \frac{logx}{B} - logy
+        \end{align}
+
+        scorelossfixbatch:
+        ------------------
+        \begin{align}
+            score_{loss4} = log(\frac{x}{B}) - logy = logx - logy - logB 
+        \end{align}
+        """
         tau = self.tau
         epsison = 0.00001
-        pos_score = torch.exp(torch.sum(pos_emb*anchor_emb, dim=1) / tau)
-        # neg_score = torch.exp(torch.sum(neg_emb*anchor_emb, dim=1) / tau)
-        # key_emb = torch.cat([pos_emb, neg_emb], dim=0)
+        y = torch.exp(torch.sum(pos_emb*anchor_emb, dim=1) / tau)
         key_emb = neg_emb
-        neg_score_all = torch.exp(anchor_emb @ key_emb.T / tau).sum(1)
-        neg_score = neg_score_all / neg_score_all.shape[0]
-        loss = -torch.log(pos_score / (neg_score_all+epsison))
-        return loss, pos_score, neg_score
-
-    def generative_loss(self, anchors_oral, anchors_pred_pos, anchors_pred_neg):
-        # tau = self.tau
-        # epsison = 0.00001
-        loss = torch.norm(anchors_oral - anchors_pred_pos) / anchors_oral.shape[1]
-        pos_score = -loss
-    
-        return loss, pos_score, 0
+        x = torch.exp(anchor_emb @ key_emb.T / tau).sum(1)
+        B = x.shape[0]
+        loss = -torch.log(y / (x + epsison))
+        if self.score_type == "score1":
+            return loss, y, x / B 
+        elif self.score_type == "scoreloss":
+            return loss, torch.log(y), torch.log(x)
+        elif self.score_type == "scorelossfixbatch":
+            return loss, torch.log(y), torch.log(x)-math.log(B)
+        elif self.score_type == "score2":
+            return loss, torch.log(y), torch.log(x) / B 
+        else:
+            raise NotImplementedError
 
     def get_anchor_oral_features(self, bg, feat):
         unbatchg = dgl.unbatch(bg)
@@ -174,62 +181,16 @@ class CoLAModel(nn.Module):
         return anchor_embs
 
     def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
-        pos_in_feat = F.dropout(pos_in_feat, 0.2, training=self.training)
-        neg_in_feat = F.dropout(neg_in_feat, 0.2, training=self.training)
+        # pos_in_feat = F.dropout(pos_in_feat, 0.2, training=self.training)
+        # neg_in_feat = F.dropout(neg_in_feat, 0.2, training=self.training)
         anchor_inputs = self.get_anchor_oral_features(pos_batchg, pos_in_feat)
-
         pos_pool_emb, pos_anchor_out, pos_gcn_emb = self.gcn(pos_batchg, pos_in_feat)
         neg_pool_emb, neg_anchor_out, neg_gcn_emb = self.gcn(neg_batchg, neg_in_feat)      
-        loss_pool, pos_score_pool, neg_score_pool = self.infonceloss( pos_pool_emb,  \
+        loss_pool, pos_score_pool, neg_score_pool = self.infonceloss(pos_pool_emb,  \
             neg_pool_emb, pos_anchor_out)
-        loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_gcn_emb, \
-            neg_gcn_emb, pos_anchor_out)
-        loss_gen, pos_score_gen, neg_score_gen = self.generative_loss(anchor_inputs, self.attr_mlp(pos_gcn_emb),  self.attr_mlp(neg_gcn_emb))
-        # gcn_mapself.attr_mlp 
-        beta = self.beta
-        loss = loss_pool + loss_gen*beta# + loss_gcn
-        # print(loss_pool.mean().item(), loss_gen.mean().item()*beta)
-        pos_score = pos_score_pool + pos_score_gen*beta# + pos_score_gcn
-        neg_score = neg_score_pool + neg_score_gen*beta# + neg_score_gcn
+
+        loss = loss_pool
+        pos_score = pos_score_pool 
+        neg_score = neg_score_pool
         return loss, pos_score, neg_score
-    # def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
-    #     pos_in_feat = F.dropout(pos_in_feat, 0.2, training=self.training)
-    #     pos_pool_emb, anchor_out, pos_gcn_emb = self.gcn(pos_batchg, pos_in_feat)
-    #     neg_pool_emb, _, pos_gcn_emb = self.gcn(neg_batchg, neg_in_feat)      
-    #     # pos_pool_emb, anchor_out
-    #     # batch * embeddingsz, batch * embeddingsz
-    #     # print(pos_pool_emb.shape, anchor_out.shape)
-    #     tau = self.tau
-    #     epsison = 0.00001
-    #     pos_score = torch.exp(torch.sum(pos_pool_emb*anchor_out, dim=1) / tau)
-    #     neg_score = torch.exp(torch.sum(neg_pool_emb*anchor_out, dim=1) / tau)
 
-    #     neg_score_all = torch.exp(anchor_out @ pos_pool_emb.T / tau).sum(1)
-    #     neg_score_all2 = torch.exp(pos_pool_emb @ anchor_out.T / tau).sum(1)
-    #     loss1 = -torch.log(pos_score / (neg_score_all+epsison))
-    #     loss2 = -torch.log(pos_score / (neg_score_all2+epsison))
-    #     loss = loss1
-    #     return loss, pos_score, neg_score
-
-
-if __name__ == "__main__":
-    # sample
-    model = CoLAModel(5)
-    g1 = dgl.graph(([1, 2, 3], [2, 3, 1]))
-    g1 = dgl.add_self_loop(g1)
-    g1.ndata["feat"] = torch.rand((4, 5))
-    g2 = dgl.graph(([3, 2, 4], [2, 3, 1]))
-    g2 = dgl.add_self_loop(g2)
-    g2.ndata["feat"] = torch.rand((5, 5))
-    bg = dgl.batch([g1, g2])
-    bg2 = dgl.batch([g2, g1])
-
-    ans = model(bg, bg.ndata["feat"], bg2, bg2.ndata["feat"])
-    print(ans)
-    # g.ndata['feat'] = torch.rand((4, 5))
-    # print(g.ndata['feat'])
-    # subg = dgl.node_subgraph(g, [1,2])
-    # print(subg.ndata['feat'])
-    # subg.ndata['feat'] = torch.zeros((2, 5))
-    # print(subg.ndata['feat'])
-    # print(g.ndata['feat'])

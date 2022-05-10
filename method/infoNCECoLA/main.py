@@ -48,7 +48,8 @@ if __name__ == "__main__":
         out_feats=args.embedding_dim,
         global_adg=args.global_adg,
         tau=args.tau,
-        generative_loss_w=args.generative_loss_w
+        generative_loss_w=args.generative_loss_w,
+        score_type=args.score_type
     ).to(device)
     print(model)
     
