@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 from  dgl.nn.pytorch import EdgeWeightNorm
+from dgl.nn.pytorch import SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
         super(Discriminator, self).__init__()
@@ -47,6 +49,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         
         self.act = nn.PReLU()
         self.reset_parameters()
+        self.pool = AvgPooling()
 
     def reset_parameters(self):
         r"""
@@ -69,19 +72,11 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
             init.zeros_(self.bias)
 
     def forward(self, bg, in_feat):
+         
+        anchor_embs = bg.ndata['feat'][::4, :].clone()
         # Anonymization
-        unbatchg = dgl.unbatch(bg)
-        unbatchg_list = []
-        anchor_feat_list = []
-        for g in unbatchg:
-            anchor_feat = g.ndata['feat'][0, :].clone()
-            g.ndata['feat'][0, :] = 0
-            unbatchg_list.append(g)
-            anchor_feat_list.append(anchor_feat)
-        bg = dgl.batch(unbatchg_list)
-        
+        bg.ndata['feat'][::4, :] = 0
         # anchor_out
-        anchor_embs = torch.stack(anchor_feat_list, dim=0)
         anchor_out = torch.matmul(anchor_embs, self.weight) 
         if self.bias_term:
             anchor_out = anchor_out + self.bias
@@ -104,14 +99,9 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         with bg.local_scope():
             # pooling        
             bg.ndata["h"] = h
-            subgraph_pool_emb = []
-            gcn_emb = []
-            unbatchg = dgl.unbatch(bg)
-            for g in unbatchg:
-                subgraph_pool_emb.append(torch.mean(g.ndata["h"], dim=0))
-                gcn_emb.append(g.ndata["h"][0, :])
-            subgraph_pool_emb = torch.stack(subgraph_pool_emb, dim=0)
-            gcn_emb = torch.stack(gcn_emb, dim=0)
+            subgraph_pool_emb = self.pool(bg,h)
+            gcn_emb = bg.ndata['h'][::4, :].clone()
+        
         # return subgraph_pool_emb, anchor_out
         subgraph_pool_emb = self.subg2anchor(subgraph_pool_emb)
         gcn_emb = self.gcn2anchor(gcn_emb)
