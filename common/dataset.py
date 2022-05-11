@@ -19,8 +19,7 @@ from common.utils import is_bidirected, load_ogbn_arxiv, load_BlogCatalog, load_
 
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
-
-def split_auc(groundtruth, prob):
+def split_auc(groundtruth, prob,data_name):
     r"""
     print the scoring(AUC) of the two types of anomalies separately.
     Parameter:
@@ -35,25 +34,29 @@ def split_auc(groundtruth, prob):
     -------
     None
     """
-    str_pos_idx = groundtruth == 1
-    attr_pos_idx = groundtruth == 2
-    norm_idx = groundtruth == 0
+    s_score = -1
+    a_score = -1
+    if data_name != 'custom':
+        str_pos_idx = groundtruth == 1
+        attr_pos_idx = groundtruth == 2
+        norm_idx = groundtruth == 0
 
-    str_data_idx = str_pos_idx | norm_idx
-    attr_data_idx = attr_pos_idx | norm_idx
+        str_data_idx = str_pos_idx | norm_idx
+        attr_data_idx = attr_pos_idx | norm_idx
 
-    str_data_groundtruth = groundtruth[str_data_idx]
-    str_data_predict = prob[str_data_idx]
+        str_data_groundtruth = groundtruth[str_data_idx]
+        str_data_predict = prob[str_data_idx]
 
-    attr_data_groundtruth = np.where(groundtruth[attr_data_idx] != 0, 1, 0)
-    attr_data_predict = prob[attr_data_idx]
+        attr_data_groundtruth = np.where(groundtruth[attr_data_idx] != 0, 1, 0)
+        attr_data_predict = prob[attr_data_idx]
 
-    s_score = roc_auc_score(str_data_groundtruth, str_data_predict)
-    a_score = roc_auc_score(attr_data_groundtruth, attr_data_predict)
+        s_score = roc_auc_score(str_data_groundtruth, str_data_predict)
+        a_score = roc_auc_score(attr_data_groundtruth, attr_data_predict)
+        print("structural anomaly score:", s_score)
+        print("attribute anomaly score:", a_score)
+
     final_score = roc_auc_score(np.where(groundtruth == 0, 0, 1), prob)
 
-    print("structural anomaly score:", s_score)
-    print("attribute anomaly score:", a_score)
     print("final anomaly score:", final_score)
     return final_score, a_score, s_score
 
@@ -291,7 +294,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         -------
         None
         """
-        return split_auc(self.anomaly_label, prediction)
+        return split_auc(self.anomaly_label, prediction,self.dataset_name)
 
     def evaluation_multiround(self, predict_score_arr):
         '''
@@ -355,11 +358,19 @@ if __name__ == "__main__":
     
     for data_name in well_test_dataset:
         print("\ndataset:", data_name)
-        dataset = GraphNodeAnomalyDectionDataset(data_name)
+        if data_name=='ACM':
+            g=load_ACM()[0]
+            dataset = GraphNodeAnomalyDectionDataset(name='custom',g_data=g,y_data=g.ndata['label'])
+        else:
+            dataset = GraphNodeAnomalyDectionDataset(name=data_name)
+
         print("num_anomaly:", dataset.num_anomaly)
         print("anomaly_label", dataset.anomaly_label)
         rand_ans = np.random.rand(dataset.num_nodes)
-        _, _, final_score = dataset.evalution(rand_ans)
+        if data_name=='ACM':
+            final_score = roc_auc_score(dataset.anomaly_label,rand_ans)
+        else:
+            _, _, final_score = dataset.evalution(rand_ans)
         num_nodes_list.append(dataset.num_nodes)
         num_edges_list.append(dataset.dataset.num_edges())
         num_anomaly_list.append(dataset.num_anomaly.item())
