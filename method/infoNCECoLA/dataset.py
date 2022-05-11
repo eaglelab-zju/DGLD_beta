@@ -20,6 +20,7 @@ from common.utils import load_ACM
 from colautils import get_parse
 args = get_parse()
 
+
 def safe_add_self_loop(g):
     newg = dgl.remove_self_loop(g)
     newg = dgl.add_self_loop(newg)

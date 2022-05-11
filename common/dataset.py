@@ -40,7 +40,6 @@ def split_auc(groundtruth, prob,data_name):
         str_pos_idx = groundtruth == 1
         attr_pos_idx = groundtruth == 2
         norm_idx = groundtruth == 0
-
         str_data_idx = str_pos_idx | norm_idx
         attr_data_idx = attr_pos_idx | norm_idx
 
@@ -49,7 +48,6 @@ def split_auc(groundtruth, prob,data_name):
 
         attr_data_groundtruth = np.where(groundtruth[attr_data_idx] != 0, 1, 0)
         attr_data_predict = prob[attr_data_idx]
-
         s_score = roc_auc_score(str_data_groundtruth, str_data_predict)
         a_score = roc_auc_score(attr_data_groundtruth, attr_data_predict)
         print("structural anomaly score:", s_score)
@@ -122,8 +120,8 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             self.dataset = eval(self.dataset_map[self.dataset_name])[0]
         else:
             self.dataset = g_data
-
-        assert is_bidirected(self.dataset) == True
+        if self.dataset_name != 'custom':
+            assert is_bidirected(self.dataset) == True
         self.init_anomaly_label(label=y_data)
 
         if self.dataset_name != 'custom' and y_data == None:
@@ -367,16 +365,13 @@ if __name__ == "__main__":
         print("num_anomaly:", dataset.num_anomaly)
         print("anomaly_label", dataset.anomaly_label)
         rand_ans = np.random.rand(dataset.num_nodes)
-        if data_name=='ACM':
-            final_score = roc_auc_score(dataset.anomaly_label,rand_ans)
-        else:
-            _, _, final_score = dataset.evalution(rand_ans)
+
+        final_score,_, _ = dataset.evalution(rand_ans)
         num_nodes_list.append(dataset.num_nodes)
         num_edges_list.append(dataset.dataset.num_edges())
         num_anomaly_list.append(dataset.num_anomaly.item())
         num_attributes_list.append(dataset.dataset.ndata['feat'].shape[1])
         random_evaluation_list.append(final_score)
-
 
     dataset_info = pd.DataFrame({
         "well_test_dataset":well_test_dataset,
