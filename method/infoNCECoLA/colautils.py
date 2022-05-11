@@ -173,12 +173,12 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
     model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     criterion = torch.nn.BCEWithLogitsLoss()
     num_epoch = args.num_epoch if pseudo_label_type == 'none' else args.selflabeling_epcohs
-    save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
-    if not os.path.exists(save_path):
-        print(f"create {save_path}")
-        os.makedirs(save_path)
+    # save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
+    
+    # if not os.path.exists(save_path):
+    #     print(f"create {save_path}")
+    #     os.makedirs(save_path)
     for epoch in range(num_epoch):
-        
         
         train_loader.dataset.random_walk_sampling()
         loss_accum = train_epoch(
@@ -195,8 +195,8 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
             "neg_scores":neg_scores,
             "losses":losses,
         }
-        epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
-        joblib.dump(save_content, epcoh_save_path)
+        # epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
+        # joblib.dump(save_content, epcoh_save_path)
         final_score, a_score, s_score = train_loader.dataset.oraldataset.evalution(predict_score)
         writer.add_scalars(
             "auc-{}".format(pseudo_label_type),
