@@ -18,6 +18,7 @@ method/CoLA/tmp/
 CoLA/
 method/DOMINANT/run2.sh
 method/infoNCECoLA/dataset/
+method/zp/dataset/
 method/info-SL-GAD
 .gitignore
 data/*_dgld.mat
