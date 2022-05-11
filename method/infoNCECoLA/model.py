@@ -186,10 +186,11 @@ class CoLAModel(nn.Module):
         neg_pool_emb, neg_anchor_out, neg_gcn_emb = self.gcn(neg_batchg, neg_in_feat)      
         neg_aug_pool_emb, neg_aug_anchor_out, neg_aug_gcn_emb = self.gcn(neg_aug_batchg, neg_aug_feat)  
         
-        loss_pool, pos_score_pool, neg_score_pool = self.infonceloss( pos_pool_emb,  \
-            neg_pool_emb, pos_anchor_out)
+        # loss_pool, pos_score_pool, neg_score_pool = self.infonceloss( pos_pool_emb,  \
+        #     neg_pool_emb, pos_anchor_out)
         # loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_gcn_emb, \
         #     neg_gcn_emb, pos_anchor_out)
+        loss_pool, pos_score_pool, neg_score_pool = self.aug_infonceloss(pos_pool_emb, neg_pool_emb,neg_aug_pool_emb, pos_anchor_out)
 
 
         loss_gen, pos_score_gen, neg_score_gen = self.generative_loss(anchor_inputs, self.attr_mlp(pos_gcn_emb),  self.attr_mlp(neg_gcn_emb))

@@ -177,17 +177,17 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer, pseudo_label_type=pseudo_label_type
         )
-        writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
+        # writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
         predict_score = test_epoch(
             epoch, args, test_loader, model, device
         )
         final_score, a_score, s_score = train_loader.dataset.oraldataset.evalution(predict_score)
-        writer.add_scalars(
-            "auc-{}".format(pseudo_label_type),
-            {"final": final_score, "structural": s_score, "attribute": a_score},
-            epoch,
-        )
-        writer.flush()
+        # writer.add_scalars(
+        #     "auc-{}".format(pseudo_label_type),
+        #     {"final": final_score, "structural": s_score, "attribute": a_score},
+        #     epoch,
+        # )
+        # writer.flush()
     return model
 
 # multi-round test
