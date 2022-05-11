@@ -369,9 +369,9 @@ if __name__ == "__main__":
         print("anomaly_label", dataset.anomaly_label)
         rand_ans = np.random.rand(dataset.num_nodes)
         if data_name=='ACM':
-            final_score = roc_auc_score(dataset.anomaly_label,rand_ans)
+            final_score,_, _ = dataset.evalution(rand_ans)
         else:
-            _, _, final_score = dataset.evalution(rand_ans)
+            final_score,_, _ = dataset.evalution(rand_ans)
         num_nodes_list.append(dataset.num_nodes)
         num_edges_list.append(dataset.dataset.num_edges())
         num_anomaly_list.append(dataset.num_anomaly.item())
