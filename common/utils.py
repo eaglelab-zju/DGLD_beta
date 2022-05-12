@@ -136,7 +136,9 @@ def load_mat_data2dgl(data_path,verbose=True):
         print('  NumEdges: {}'.format(graph.number_of_edges()))
         print('  NumFeats: {}'.format(graph.ndata['feat'].shape[1]))
         print('  NumClasses: {}'.format(num_classes))
-    
+    if 'ACM' in data_path:
+        print('ACM')
+        return [graph]
     # # add reverse edges
     # srcs, dsts = graph.all_edges()
     # graph.add_edges(dsts, srcs)

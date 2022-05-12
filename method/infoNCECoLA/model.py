@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
-from  dgl.nn.pytorch import EdgeWeightNorm, SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
-
+from  dgl.nn.pytorch import EdgeWeightNorm
+from dgl.nn.pytorch import SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
 
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
@@ -48,6 +48,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         self.pool = AvgPooling()
         self.act = nn.PReLU()
         self.reset_parameters()
+        self.pool = AvgPooling()
 
     def reset_parameters(self):
         r"""
@@ -69,12 +70,12 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         if self.bias is not None:
             init.zeros_(self.bias)
 
-    def forward(self, bg, in_feat, subgraph_size=4):
-        bg.ndata['feat'] = in_feat
-        anchor_embs = bg.ndata['feat'][::subgraph_size, :].clone()
+    def forward(self, bg, in_feat):
+         
+        anchor_embs = bg.ndata['feat'][::4, :].clone()
         # Anonymization
-        bg.ndata['feat'][::subgraph_size, :] = 0
-        
+        bg.ndata['feat'][::4, :] = 0
+        # anchor_out
         anchor_out = torch.matmul(anchor_embs, self.weight) 
         if self.bias_term:
             anchor_out = anchor_out + self.bias
@@ -92,8 +93,10 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         h = self.act(h)
         with bg.local_scope():
             # pooling        
-            subgraph_pool_emb = self.pool(bg, h)
-            gcn_emb = h[::subgraph_size, :] 
+            bg.ndata["h"] = h
+            subgraph_pool_emb = self.pool(bg,h)
+            gcn_emb = bg.ndata['h'][::4, :].clone()
+        
         # return subgraph_pool_emb, anchor_out
         subgraph_pool_emb = self.subg2anchor(subgraph_pool_emb)
         gcn_emb = self.gcn2anchor(gcn_emb)

@@ -37,6 +37,8 @@ if __name__ == '__main__':
     # adj_norm = torch.FloatTensor(adj_norm.toarray())
     # adj=adj+sp.eye(adj.shape[0])
 
+    adj_norm = normalize_adj(adj)
+    adj_norm = torch.FloatTensor(adj_norm.toarray())
 
     import numpy as np
     print(np.sum(adj))
