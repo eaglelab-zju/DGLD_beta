@@ -6,11 +6,11 @@ import scipy.sparse as sp
 from sklearn import preprocessing
 import scipy.io as sio
 import numpy as np
-from torch_geometric.datasets import Planetoid,HGBDataset,AttributedGraphDataset
-import torch_geometric.transforms as T
+# from torch_geometric.datasets import Planetoid,HGBDataset,AttributedGraphDataset
+# import torch_geometric.transforms as T
 from ogb.nodeproppred import PygNodePropPredDataset
-from torch_geometric.utils import to_undirected,add_self_loops,remove_self_loops
-from torch_geometric.data import Data
+# from torch_geometric.utils import to_undirected,add_self_loops,remove_self_loops
+# from torch_geometric.data import Data
 import dgl
 import os
 current_file_name = __file__
