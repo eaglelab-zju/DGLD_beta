@@ -48,6 +48,7 @@ if __name__ == "__main__":
         out_feats=args.embedding_dim,
         global_adg=args.global_adg,
         tau=args.tau,
+        alpha=args.alpha,
         generative_loss_w=args.generative_loss_w,
         score_type=args.score_type
     ).to(device)
@@ -72,13 +73,3 @@ if __name__ == "__main__":
     # optimizer.param_groups[0]['lr'] *= 0.1
     train_loader.dataset.dataset.ndata['pseudo_label'] = torch.Tensor(pseudo_labels)
     train_loader.dataset.dataset.ndata['fix_pseudo_label'] = get_staticpseudolabel(pseudo_labels, keep_ratio=args.keep_ratio)
-    # if args.reinit:
-    #     model = CoLAModel(
-    #         in_feats=dataset[0][0].ndata["feat"].shape[1],
-    #         out_feats=args.embedding_dim,
-    #         global_adg=args.global_adg,
-    #         tau=args.tau,
-    #         generative_loss_w=args.generative_loss_w
-    #     ).to(device)
-    # train_model(model, args, train_loader, test_loader, writer, device, pseudo_label_type=args.pseudotype)
-    # pseudo_labels = multi_round_test(args, test_loader, model, device)

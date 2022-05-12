@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
-from  dgl.nn.pytorch import EdgeWeightNorm
-from dgl.nn.pytorch import SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+from  dgl.nn.pytorch import EdgeWeightNorm, SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+
 
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
@@ -48,7 +48,6 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         self.pool = AvgPooling()
         self.act = nn.PReLU()
         self.reset_parameters()
-        self.pool = AvgPooling()
 
     def reset_parameters(self):
         r"""
@@ -70,12 +69,12 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         if self.bias is not None:
             init.zeros_(self.bias)
 
-    def forward(self, bg, in_feat):
-         
-        anchor_embs = bg.ndata['feat'][::4, :].clone()
+    def forward(self, bg, in_feat, subgraph_size=4):
+        bg.ndata['feat'] = in_feat
+        anchor_embs = bg.ndata['feat'][::subgraph_size, :].clone()
         # Anonymization
-        bg.ndata['feat'][::4, :] = 0
-        # anchor_out
+        bg.ndata['feat'][::subgraph_size, :] = 0
+        
         anchor_out = torch.matmul(anchor_embs, self.weight) 
         if self.bias_term:
             anchor_out = anchor_out + self.bias
@@ -93,10 +92,8 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         h = self.act(h)
         with bg.local_scope():
             # pooling        
-            bg.ndata["h"] = h
-            subgraph_pool_emb = self.pool(bg,h)
-            gcn_emb = bg.ndata['h'][::4, :].clone()
-        
+            subgraph_pool_emb = self.pool(bg, h)
+            gcn_emb = h[::subgraph_size, :] 
         # return subgraph_pool_emb, anchor_out
         subgraph_pool_emb = self.subg2anchor(subgraph_pool_emb)
         gcn_emb = self.gcn2anchor(gcn_emb)
@@ -184,8 +181,6 @@ class CoLAModel(nn.Module):
         return anchor_embs
 
     def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
-        # pos_in_feat = F.dropout(pos_in_feat, 0.2, training=self.training)
-        # neg_in_feat = F.dropout(neg_in_feat, 0.2, training=self.training)
         anchor_inputs = self.get_anchor_oral_features(pos_batchg, pos_in_feat)
         pos_pool_emb, pos_anchor_out, pos_gcn_emb = self.gcn(pos_batchg, pos_in_feat)
         neg_pool_emb, neg_anchor_out, neg_gcn_emb = self.gcn(neg_batchg, neg_in_feat)      

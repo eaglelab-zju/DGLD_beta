@@ -17,7 +17,9 @@ method/CoLA/tmp/
 *__pycache__
 CoLA/
 method/DOMINANT/run2.sh
-method/infoNCECoLA
+method/infoNCECoLA/dataset/
+method/infoANEMONE/dataset/
+method/zp/dataset/
 method/info-SL-GAD
 .gitignore
 data/*_dgld.mat
