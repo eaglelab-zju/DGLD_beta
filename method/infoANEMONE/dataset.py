@@ -15,6 +15,7 @@ import sys
 sys.path.append('../../')
 from common.dataset import GraphNodeAnomalyDectionDataset
 from common.sample import CoLASubGraphSampling, UniformNeighborSampling
+from common.utils import load_ACM
 
 def safe_add_self_loop(g):
     newg = dgl.remove_self_loop(g)
@@ -26,7 +27,13 @@ class CoLADataSet(DGLDataset):
         super(CoLADataSet).__init__()
         self.dataset_name = base_dataset_name
         self.subgraphsize = subgraphsize
-        self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
+        # self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
+        if self.dataset_name=='ACM':
+            g=load_ACM()[0]
+            self.oraldataset = GraphNodeAnomalyDectionDataset(name='custom',g_data=g,y_data=g.ndata['label'])
+        else:
+            self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
+
         self.dataset = self.oraldataset[0]
         self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
