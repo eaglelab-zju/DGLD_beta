@@ -97,12 +97,14 @@ def loss_func(B,B_hat,z_mean,z_arg,adj, A_hat, attrs, X_hat, alpha,eta, theta,de
     # Attribute reconstruction loss
     etas=attrs*(eta-1)+1
     diff_attribute = torch.pow((X_hat - attrs)* etas, 2) 
+    # diff_attribute = torch.pow((X_hat - attrs), 2) 
     attribute_reconstruction_errors = torch.sqrt(torch.sum(diff_attribute, 1))
     attribute_cost = torch.mean(attribute_reconstruction_errors)
 
     # structure reconstruction loss
     thetas = adj * (theta-1) + 1 
-    diff_structure = torch.pow((A_hat - adj)* thetas, 2) 
+    # diff_structure = torch.pow((A_hat - adj)* thetas, 2) 
+    diff_structure = torch.pow((A_hat - adj), 2) 
     structure_reconstruction_errors = torch.sqrt(torch.sum(diff_structure, 1))
     structure_cost = torch.mean(structure_reconstruction_errors)
 

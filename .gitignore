@@ -3,6 +3,7 @@ method/CoLA/dataset/*
 *.zip
 t.py
 *.pyc
+*.log
 .vscode/settings.json
 EDA.ipynb
 method/CoLA/log/

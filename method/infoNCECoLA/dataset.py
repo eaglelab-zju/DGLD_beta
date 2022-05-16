@@ -15,7 +15,11 @@ import sys
 sys.path.append('../../')
 from common.dataset import GraphNodeAnomalyDectionDataset
 from common.sample import CoLASubGraphSampling, UniformNeighborSampling
+from common.dglAug import ComposeAug,NodeShuffle,AddEdge,RandomMask
 from common.utils import load_ACM
+from colautils import get_parse
+args = get_parse()
+
 
 def safe_add_self_loop(g):
     newg = dgl.remove_self_loop(g)
@@ -32,7 +36,6 @@ class CoLADataSet(DGLDataset):
             self.oraldataset = GraphNodeAnomalyDectionDataset(name='custom',g_data=g,y_data=g.ndata['label'])
         else:
             self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
-
         self.dataset = self.oraldataset[0]
         self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
@@ -50,23 +53,31 @@ class CoLADataSet(DGLDataset):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))
 
     def graph_transform(self, g):
-        newg = g
-        # newg = safe_add_self_loop(g)
-        # add virtual node as target node.
-        # newg.add_nodes(1)
-        # newg.ndata['feat'][-1] = newg.ndata['feat'][0]
-        # newg = safe_add_self_loop(newg)
-        # Anonymization
-        # newg.ndata['feat'][0] = 0
+        if args.aug_type=='add_edge':
+            augmentor = ComposeAug([AddEdge(args.aug_ratio)])
+        elif args.aug_type=='random_mask':
+            augmentor = ComposeAug([RandomMask(args.aug_ratio)])
+        elif args.aug_type=='node_shuffle':
+            augmentor = ComposeAug([NodeShuffle()])
+        elif args.aug_type=='none':
+            augmentor = lambda x:x
+        newg = augmentor(g)
+
         return newg
 
     def __getitem__(self, i):
-        pos_subgraph = self.graph_transform(dgl.node_subgraph(self.dataset, self.paces[i]))
+        pos_subgraph = dgl.node_subgraph(self.dataset, self.paces[i])
+
         neg_idx = np.random.randint(self.dataset.num_nodes()) 
         while neg_idx == i:
             neg_idx = np.random.randint(self.dataset.num_nodes()) 
-        neg_subgraph = self.graph_transform(dgl.node_subgraph(self.dataset, self.paces[neg_idx]))
-        return pos_subgraph, neg_subgraph
+        neg_subgraph = dgl.node_subgraph(self.dataset, self.paces[neg_idx])
+
+        pos_subgraph = self.graph_transform(pos_subgraph)
+        neg_subgraph = self.graph_transform(neg_subgraph)
+        neg_aug_subgraph = neg_subgraph #TODO
+
+        return pos_subgraph, neg_subgraph, neg_aug_subgraph
 
     def __len__(self):
         return self.dataset.num_nodes()
