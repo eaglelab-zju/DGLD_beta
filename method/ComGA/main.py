@@ -24,7 +24,7 @@ if __name__ == '__main__':
     test_mode=False
     # # # load dataset
     if not test_mode:
-        dataset = GraphNodeAnomalyDectionDataset(args.dataset,cola_preprocess_features=False)
+        dataset = GraphNodeAnomalyDectionDataset(args.dataset,cola_preprocess_features=True)
         graph = dataset[0]
         features = graph.ndata['feat']
         print(features)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
 
     else:
         # # 构造原github数据为graph，进行测试
-        network = nx.read_weighted_edgelist('/home/data/zp/ygm/ComGA/data/BlogCatalog/BlogCatalog.edgelist')
+        network = nx.read_weighted_edgelist('/data1/ygm/projects/ComGA/data/BlogCatalog/BlogCatalog.edgelist')
         A = np.asarray(nx.adjacency_matrix(network, nodelist=None, weight='None').todense())
         print('BlogCatalog.edgelist: A -->',np.sum(A))
         k1 = np.sum(A, axis=1)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         B =np.array(A - Eij)
         print('B -->',B.shape)
 
-        data_mat = sio.loadmat('/home/data/zp/ygm/ComGA/data/BlogCatalog/BlogCatalog.mat')
+        data_mat = sio.loadmat('/data1/ygm/projects/ComGA/data/BlogCatalog/BlogCatalog.mat')
         adj = data_mat['Network']
         feat = data_mat['Attributes']
         truth = data_mat['Label']

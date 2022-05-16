@@ -62,6 +62,7 @@ class CoLADataSet(DGLDataset):
         elif args.aug_type=='none':
             augmentor = lambda x:x
         newg = augmentor(g)
+
         return newg
 
     def __getitem__(self, i):
@@ -71,9 +72,12 @@ class CoLADataSet(DGLDataset):
         while neg_idx == i:
             neg_idx = np.random.randint(self.dataset.num_nodes()) 
         neg_subgraph = dgl.node_subgraph(self.dataset, self.paces[neg_idx])
-        neg_aug_subg = self.graph_transform(neg_subgraph)
 
-        return pos_subgraph, neg_subgraph, neg_aug_subg
+        pos_subgraph = self.graph_transform(pos_subgraph)
+        neg_subgraph = self.graph_transform(neg_subgraph)
+
+
+        return pos_subgraph, neg_subgraph, neg_subgraph
 
     def __len__(self):
         return self.dataset.num_nodes()

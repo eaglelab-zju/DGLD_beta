@@ -42,7 +42,7 @@ def get_parse():
     parser.add_argument('--reinit', type=bool, default=True)
     parser.add_argument('--aug_type', type=str, default='add_edge', help='graph augment types')  
     parser.add_argument('--aug_ratio', type=float, default=0.5)
-
+    parser.add_argument('--score_type', type=str, default='score1', help='score type') 
     
     args = parser.parse_args()
 
@@ -136,7 +136,7 @@ def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_l
             mask = get_staticpseudolabel_mask(pos_subgraph).to(device)
         else:
             mask = 1
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat,neg_aug_subg,neg_augfeat)
+        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)#,neg_aug_subg,neg_augfeat)
         loss = loss * mask
         loss = loss.mean()
         loss.backward()
@@ -161,7 +161,7 @@ def test_epoch(epoch, args, loader, net, device):
         negfeat = neg_subgraph.ndata['feat'].to(device)
         neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
 
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat,neg_aug_subg,neg_augfeat)
+        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)#,neg_aug_subg,neg_augfeat)
         losses.extend(loss.detach().cpu().numpy())
         pos_scores.extend(pos_score.detach().cpu().numpy())
         neg_scores.extend(neg_score.detach().cpu().numpy())
