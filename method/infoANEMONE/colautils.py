@@ -27,6 +27,8 @@ def get_parse():
 
     parser.add_argument('--drop_prob', type=float, default=0.0)
     parser.add_argument('--tau', type=float, default=0.5)
+    parser.add_argument('--alpha', type=float, default=0.8)
+    
     parser.add_argument('--batch_size', type=int, default=2048)
     parser.add_argument('--subgraph_size', type=int, default=4)
     # parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
@@ -41,9 +43,6 @@ def get_parse():
     parser.add_argument('--global_adg', type=bool, default=True)  
     parser.add_argument('--continue_train', type=bool, default=False)
     parser.add_argument('--reinit', type=bool, default=True)
-    parser.add_argument('--aug_type', type=str, default='add_edge', help='graph augment types')  
-    parser.add_argument('--aug_ratio', type=float, default=0.5)
-    parser.add_argument('--score_type', type=str, default='score1', help='score type') 
     
     args = parser.parse_args()
 
@@ -122,12 +121,10 @@ def get_label_mask(batch_graph):
 def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_label_type='gt'):
     loss_accum = 0
     net.train()
-    for step, (pos_subgraph, neg_subgraph,neg_aug_subg) in enumerate(tqdm(loader, desc=pseudo_label_type)):
-        pos_subgraph, neg_subgraph, neg_aug_subg = pos_subgraph.to(device), neg_subgraph.to(device), neg_aug_subg.to(device)
+    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc=pseudo_label_type)):
+        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
-        neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
-
         optimizer.zero_grad()
         if pseudo_label_type == 'gt':
             mask = get_label_mask(pos_subgraph).to(device)
@@ -137,7 +134,7 @@ def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_l
             mask = get_staticpseudolabel_mask(pos_subgraph).to(device)
         else:
             mask = 1
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)#,neg_aug_subg,neg_augfeat)
+        loss, _, _, _, _ = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
         loss = loss * mask
         loss = loss.mean()
         loss.backward()
@@ -151,28 +148,41 @@ def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_l
 def test_epoch(epoch, args, loader, net, device):
     loss_accum = 0
     net.eval()
-    predict_scores = []
-    pos_scores = []
-    neg_scores = []
+    predict_scores_patch = []
+    predict_scores_context = []
+    
+    pos_scores_patch = []
+    neg_scores_patch = []
+    
+    pos_scores_context = []
+    neg_scores_context  = []
+    
     losses = []
     
-    for step, (pos_subgraph, neg_subgraph,neg_aug_subg) in enumerate(tqdm(loader, desc="Iteration")):
-        pos_subgraph, neg_subgraph, neg_aug_subg = pos_subgraph.to(device), neg_subgraph.to(device), neg_aug_subg.to(device)
+    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc="Iteration")):
+        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
-        neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
-
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)#,neg_aug_subg,neg_augfeat)
-        losses.extend(loss.detach().cpu().numpy())
-        pos_scores.extend(pos_score.detach().cpu().numpy())
-        neg_scores.extend(neg_score.detach().cpu().numpy())
         
-        predict_scores.extend(list((neg_score-pos_score).detach().cpu().numpy()))
+        loss, pos_score_pool, pos_score_gcn, neg_score_pool, neg_score_gcn = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
+        losses.extend(loss.detach().cpu().numpy())
+        pos_scores_patch.extend(pos_score_gcn.detach().cpu().numpy())
+        neg_scores_patch.extend(neg_score_gcn.detach().cpu().numpy())
+
+        pos_scores_context.extend(pos_score_pool.detach().cpu().numpy())
+        neg_scores_context.extend(neg_score_pool.detach().cpu().numpy())
+        
+        predict_scores_patch.extend(list((neg_score_gcn-pos_score_gcn).detach().cpu().numpy()))
+        predict_scores_context.extend(list((neg_score_pool-pos_score_pool).detach().cpu().numpy()))
+        
         loss = loss.mean()
         loss_accum += loss.item() 
     loss_accum /= (step + 1)
     lcprint('VALID==>epoch', epoch, 'Average valid loss: {:.2f}'.format(loss_accum), color='blue')
-    return np.array(predict_scores), np.array(pos_scores), np.array(neg_scores), np.array(losses)
+    return np.array(predict_scores_patch), np.array(predict_scores_context), \
+        np.array(pos_scores_patch), np.array(pos_scores_context), \
+        np.array(neg_scores_patch), np.array(neg_scores_context), \
+    np.array(losses)
 
     
 def train_model(model, args, train_loader, test_loader, writer, device, pseudo_label_type='gt'):
@@ -180,50 +190,54 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
     model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     criterion = torch.nn.BCEWithLogitsLoss()
     num_epoch = args.num_epoch if pseudo_label_type == 'none' else args.selflabeling_epcohs
-    # save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
-    
-    # if not os.path.exists(save_path):
-    #     print(f"create {save_path}")
-    #     os.makedirs(save_path)
+    save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
+    if not os.path.exists(save_path):
+        print(f"create {save_path}")
+        os.makedirs(save_path)
     for epoch in range(num_epoch):
-        
         train_loader.dataset.random_walk_sampling()
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer, pseudo_label_type=pseudo_label_type
         )
-        # writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
-
-        predict_score, pos_scores, neg_scores, losses = test_epoch(
+        writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
+        predict_scores_patch, predict_scores_context, \
+        pos_scores_patch, pos_scores_context,\
+        neg_scores_patch, neg_scores_context, losses = test_epoch(
             epoch, args, test_loader, model, device
         )
         save_content = {
             "label": train_loader.dataset.oraldataset.anomaly_label.numpy(),
-            "scores":predict_score,
-            "pos_scores":pos_scores,
-            "neg_scores":neg_scores,
+            "scores":predict_scores_patch*(1-args.alpha)+predict_scores_context*args.alpha,
+            "pos_scores":pos_scores_patch*(1-args.alpha)+pos_scores_context*args.alpha,
+            "neg_scores":neg_scores_patch*(1-args.alpha)+neg_scores_context*args.alpha,
             "losses":losses,
         }
-        # epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
-        # joblib.dump(save_content, epcoh_save_path)
-        final_score, a_score, s_score = train_loader.dataset.oraldataset.evalution(predict_score)
-        # writer.add_scalars(
-        #     "auc-{}".format(pseudo_label_type),
-        #     {"final": final_score, "structural": s_score, "attribute": a_score},
-        #     epoch,
-        # )
-        # writer.flush()
+        epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
+        joblib.dump(save_content, epcoh_save_path)
+        final_score, a_score, s_score = train_loader.dataset.oraldataset.evalution(save_content["scores"])
+        writer.add_scalars(
+            "auc-{}".format(pseudo_label_type),
+            {"final": final_score, "structural": s_score, "attribute": a_score},
+            epoch,
+        )
+        writer.flush()
     return model
 
 # multi-round test
 def multi_round_test(args, test_loader, model, device):
-    predict_score_arr = []
+    predict_scores_patch_arr = []
+    predict_scores_context_arr = []
+    
     for rnd in range(args.auc_test_rounds):
         test_loader.dataset.random_walk_sampling()
-        predict_score, _, _, _ = test_epoch(
+        predict_scores_patch, predict_scores_context, _,_ , _, _, _ = test_epoch(
             rnd, args, test_loader, model, device
         )
-        predict_score_arr.append(list(predict_score))
 
-    predict_score_arr = np.array(predict_score_arr).T
+        predict_scores_patch_arr.append(list(predict_scores_patch))
+        predict_scores_context_arr.append(list(predict_scores_context))
+        
+    predict_score_arr = np.array(predict_scores_patch_arr).T * (1-args.alpha) + \
+        np.array(predict_scores_context_arr).T * (args.alpha)
     test_loader.dataset.oraldataset.evaluation_multiround(predict_score_arr)
     return np.mean(predict_score_arr, axis=1)

@@ -1,4 +1,5 @@
 import dgl
+import math
 from dgl.nn.pytorch import GraphConv, GATConv
 import torch
 import torch.nn as nn
@@ -41,13 +42,11 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         self.conv = GraphConv(in_feats, out_feats, weight=False, bias=False, norm=self.norm)
         self.conv.set_allow_zero_in_degree(1)
         self.subg2anchor = torch.nn.Sequential(
-            nn.Linear(out_feats, out_feats),
-            # nn.PReLU(),
-            # nn.Linear(out_feats, out_feats)
+            nn.Linear(out_feats, out_feats)
         )
         self.gcn2anchor = torch.nn.Sequential(nn.Linear(out_feats, out_feats))
         self.anchormlp = torch.nn.Sequential(nn.Linear(out_feats, out_feats))
-        
+        self.pool = AvgPooling()
         self.act = nn.PReLU()
         self.reset_parameters()
         self.pool = AvgPooling()
@@ -80,7 +79,6 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         anchor_out = torch.matmul(anchor_embs, self.weight) 
         if self.bias_term:
             anchor_out = anchor_out + self.bias
-
         anchor_out = self.act(anchor_out)
         
         in_feat = bg.ndata['feat']
@@ -90,12 +88,9 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
             h = self.conv(bg, in_feat, edge_weight=bg.edata['w'])
         else:
             h = self.conv(bg, in_feat)
-
         if self.bias_term:
             h += self.bias
-
         h = self.act(h)
-
         with bg.local_scope():
             # pooling        
             bg.ndata["h"] = h
@@ -109,6 +104,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1),\
             F.normalize(gcn_emb, p=2, dim=1)
 
+
 def drop_feature(x: torch.Tensor, drop_prob: float) -> torch.Tensor:
     device = x.device
     drop_mask = torch.empty((x.size(1),), dtype=torch.float32).uniform_(0, 1) < drop_prob
@@ -119,6 +115,7 @@ def drop_feature(x: torch.Tensor, drop_prob: float) -> torch.Tensor:
 
 def dropout_feature(x: torch.FloatTensor, drop_prob: float = 0.2) -> torch.FloatTensor:
     return F.dropout(x, p=1. - drop_prob)
+
 
 
 class CoLAModel(nn.Module):
@@ -141,6 +138,7 @@ class CoLAModel(nn.Module):
         \begin{align}
             x = \sum^{B}_{j=1}{e^{\widetilde{eg}_{j}^{T}z_{i}/\tau}}, y=e^{eg_{i}^{l}z_{i}}
         \end{align}
+
         score1:
         -------
         \begin{align}
@@ -151,6 +149,7 @@ class CoLAModel(nn.Module):
         \begin{align}
             score_{loss} = -log(y/x) = logx - logy
         \end{align}
+
         scorelossfixbatch:
         ------------------
         \begin{align}
@@ -161,6 +160,7 @@ class CoLAModel(nn.Module):
         \begin{align}
             score_{loss3} = \frac{logx}{B} - logy
         \end{align}
+
         scorelossfixbatch:
         ------------------
         \begin{align}
@@ -208,7 +208,6 @@ class CoLAModel(nn.Module):
         pos_score = pos_score_pool 
         neg_score = neg_score_pool
         return loss, pos_score, neg_score
-
 
 
 

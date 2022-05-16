@@ -83,7 +83,6 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
             subgraph_pool_emb = self.pool(bg, h)
         return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
 
-
 class OneLayerGCN(nn.Module):
     def __init__(self, in_feats=300, out_feats=64, bias=True):
         super(OneLayerGCN, self).__init__()

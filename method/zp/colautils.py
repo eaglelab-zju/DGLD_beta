@@ -41,9 +41,6 @@ def get_parse():
     parser.add_argument('--global_adg', type=bool, default=True)  
     parser.add_argument('--continue_train', type=bool, default=False)
     parser.add_argument('--reinit', type=bool, default=True)
-    parser.add_argument('--aug_type', type=str, default='add_edge', help='graph augment types')  
-    parser.add_argument('--aug_ratio', type=float, default=0.5)
-    parser.add_argument('--score_type', type=str, default='score1', help='score type') 
     
     args = parser.parse_args()
 
@@ -122,12 +119,10 @@ def get_label_mask(batch_graph):
 def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_label_type='gt'):
     loss_accum = 0
     net.train()
-    for step, (pos_subgraph, neg_subgraph,neg_aug_subg) in enumerate(tqdm(loader, desc=pseudo_label_type)):
-        pos_subgraph, neg_subgraph, neg_aug_subg = pos_subgraph.to(device), neg_subgraph.to(device), neg_aug_subg.to(device)
+    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc=pseudo_label_type)):
+        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
-        neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
-
         optimizer.zero_grad()
         if pseudo_label_type == 'gt':
             mask = get_label_mask(pos_subgraph).to(device)
@@ -137,7 +132,7 @@ def train_epoch(epoch, args, loader, net, device, criterion, optimizer, pseudo_l
             mask = get_staticpseudolabel_mask(pos_subgraph).to(device)
         else:
             mask = 1
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)#,neg_aug_subg,neg_augfeat)
+        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
         loss = loss * mask
         loss = loss.mean()
         loss.backward()
@@ -156,13 +151,12 @@ def test_epoch(epoch, args, loader, net, device):
     neg_scores = []
     losses = []
     
-    for step, (pos_subgraph, neg_subgraph,neg_aug_subg) in enumerate(tqdm(loader, desc="Iteration")):
-        pos_subgraph, neg_subgraph, neg_aug_subg = pos_subgraph.to(device), neg_subgraph.to(device), neg_aug_subg.to(device)
+    for step, (pos_subgraph, neg_subgraph) in enumerate(tqdm(loader, desc="Iteration")):
+        pos_subgraph, neg_subgraph = pos_subgraph.to(device), neg_subgraph.to(device)
         posfeat = pos_subgraph.ndata['feat'].to(device)
         negfeat = neg_subgraph.ndata['feat'].to(device)
-        neg_augfeat = neg_aug_subg.ndata['feat'].to(device)
-
-        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)#,neg_aug_subg,neg_augfeat)
+        
+        loss, pos_score, neg_score = net(pos_subgraph, posfeat, neg_subgraph, negfeat)
         losses.extend(loss.detach().cpu().numpy())
         pos_scores.extend(pos_score.detach().cpu().numpy())
         neg_scores.extend(neg_score.detach().cpu().numpy())
@@ -180,19 +174,16 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
     model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     criterion = torch.nn.BCEWithLogitsLoss()
     num_epoch = args.num_epoch if pseudo_label_type == 'none' else args.selflabeling_epcohs
-    # save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
-    
-    # if not os.path.exists(save_path):
-    #     print(f"create {save_path}")
-    #     os.makedirs(save_path)
+    save_path = os.path.join(f"{args.logdir}", f"{args.dataset}_score")
+    if not os.path.exists(save_path):
+        print(f"create {save_path}")
+        os.makedirs(save_path)
     for epoch in range(num_epoch):
-        
         train_loader.dataset.random_walk_sampling()
         loss_accum = train_epoch(
             epoch, args, train_loader, model, device, criterion, optimizer, pseudo_label_type=pseudo_label_type
         )
-        # writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
-
+        writer.add_scalar("loss-{}".format(pseudo_label_type), float(loss_accum), epoch)
         predict_score, pos_scores, neg_scores, losses = test_epoch(
             epoch, args, test_loader, model, device
         )
@@ -203,15 +194,15 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
             "neg_scores":neg_scores,
             "losses":losses,
         }
-        # epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
-        # joblib.dump(save_content, epcoh_save_path)
+        epcoh_save_path = os.path.join(save_path, f"epoch{epoch}.pkl")
+        joblib.dump(save_content, epcoh_save_path)
         final_score, a_score, s_score = train_loader.dataset.oraldataset.evalution(predict_score)
-        # writer.add_scalars(
-        #     "auc-{}".format(pseudo_label_type),
-        #     {"final": final_score, "structural": s_score, "attribute": a_score},
-        #     epoch,
-        # )
-        # writer.flush()
+        writer.add_scalars(
+            "auc-{}".format(pseudo_label_type),
+            {"final": final_score, "structural": s_score, "attribute": a_score},
+            epoch,
+        )
+        writer.flush()
     return model
 
 # multi-round test
