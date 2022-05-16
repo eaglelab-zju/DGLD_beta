@@ -11,11 +11,8 @@ import dgl
 from dgl.data import DGLDataset
 from dgl.nn.pytorch import EdgeWeightNorm
 
-import sys 
-sys.path.append('../../')
-from common.dataset import GraphNodeAnomalyDectionDataset
-from common.sample import CoLASubGraphSampling, UniformNeighborSampling
-from common.utils import load_ACM
+from DGLD.common.dataset import GraphNodeAnomalyDectionDataset
+from DGLD.common.sample import CoLASubGraphSampling, UniformNeighborSampling
 
 def safe_add_self_loop(g):
     newg = dgl.remove_self_loop(g)
@@ -23,18 +20,18 @@ def safe_add_self_loop(g):
     return newg
 
 class CoLADataSet(DGLDataset):
-    def __init__(self, base_dataset_name='Cora', subgraphsize=4):
+    """
+    CoLA Dataset to generate subgraph for train and inference.
+    
+    Parameter:
+    ----------
+    g :  dgl.graph
+    subgraphsize: int, optional
+    """
+    def __init__(self, g, subgraphsize=4):
         super(CoLADataSet).__init__()
-        self.dataset_name = base_dataset_name
         self.subgraphsize = subgraphsize
-        # self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
-        if self.dataset_name=='ACM':
-            g=load_ACM()[0]
-            self.oraldataset = GraphNodeAnomalyDectionDataset(name='custom',g_data=g,y_data=g.ndata['label'])
-        else:
-            self.oraldataset = GraphNodeAnomalyDectionDataset(name=self.dataset_name)
-
-        self.dataset = self.oraldataset[0]
+        self.dataset = g
         self.colasubgraphsampler = CoLASubGraphSampling(length=self.subgraphsize)
         self.paces = []
         self.normalize_feat()
@@ -45,8 +42,6 @@ class CoLADataSet(DGLDataset):
         self.dataset = safe_add_self_loop(self.dataset)
         norm_edge_weight = norm(self.dataset, edge_weight=torch.ones(self.dataset.num_edges()))
         self.dataset.edata['w'] = norm_edge_weight
-        # print(norm_edge_weight)
-
     def random_walk_sampling(self):
         self.paces = self.colasubgraphsampler(self.dataset, list(range(self.dataset.num_nodes())))
 
@@ -67,15 +62,3 @@ class CoLADataSet(DGLDataset):
 
     def process(self):
         pass
-
-if __name__ == '__main__':
-
-    dataset = CoLADataSet()
-    # print(dataset[0].edges())
-    ans = []
-    for i in range(100):
-        dataset.random_walk_sampling()
-        ans.append(dataset[502][1].ndata[dgl.NID].numpy().tolist())
-    print(set([str(t) for t in ans]))
-    # graph, label = dataset[0]
-    # print(graph, label)
