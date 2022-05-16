@@ -75,9 +75,9 @@ class CoLADataSet(DGLDataset):
 
         pos_subgraph = self.graph_transform(pos_subgraph)
         neg_subgraph = self.graph_transform(neg_subgraph)
+        neg_aug_subgraph = neg_subgraph #TODO
 
-
-        return pos_subgraph, neg_subgraph, neg_subgraph
+        return pos_subgraph, neg_subgraph, neg_aug_subgraph
 
     def __len__(self):
         return self.dataset.num_nodes()
