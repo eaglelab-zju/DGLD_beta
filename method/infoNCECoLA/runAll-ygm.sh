@@ -6,14 +6,15 @@ else
 fi
 
 datasets=(Cora Citeseer Pubmed ACM ogbn-arxiv)  #遍历5个数据集
-gpu_id=4  #gpu id
-exp_id=8  #实验次数/编号 
+gpu_id=3  #gpu id
+exp_id=8_1  #实验次数/编号 
 #exp_id=4 对正负子图做node_shuffle数据增强
 #exp_id=5 只对负子图做node_shuffle数据增强
 #exp_id=6 只对负子图做random_mask数据增强
 #exp_id=7 对正负子图做random_mask=0.5 数据增强  #公式（12）
 #exp_id=8 对正负子图做random_mask=0.5 tau=0.3  数据增强 #公式（12）
-
+#exp_id=8_0 对正负子图做random_mask=0.5 tau=0.3  数据增强 #公式（12）
+#exp_id=8_1 对正负子图做random_mask=0.5 tau=0.3  数据增强 #公式（12）
 
 aug_type='random_mask'  #数据增强类型
 aug_ratio=0.5 #数据增强的drop等概率值

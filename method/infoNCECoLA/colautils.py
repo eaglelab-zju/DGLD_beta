@@ -43,7 +43,6 @@ def get_parse():
     parser.add_argument('--reinit', type=bool, default=True)
     parser.add_argument('--aug_type', type=str, default='add_edge', help='graph augment types')  
     parser.add_argument('--aug_ratio', type=float, default=0.5)
-    parser.add_argument('--score_type', type=str, default='score1', help='score type') 
     
     args = parser.parse_args()
 
