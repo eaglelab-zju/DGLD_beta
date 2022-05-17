@@ -123,6 +123,17 @@ class OneLayerGCN(nn.Module):
 
 class CoLAModel(nn.Module):
     def __init__(self, in_feats=300, out_feats=64, global_adg=True):
+        """[summary]
+
+        Parameters
+        ----------
+        in_feats : int, optional
+            [description], by default 300
+        out_feats : int, optional
+            [description], by default 64
+        global_adg : bool, optional
+            [description], by default True
+        """        
         super(CoLAModel, self).__init__()
         self.gcn = OneLayerGCNWithGlobalAdg(in_feats, out_feats, global_adg)
         self.discriminator = Discriminator(out_feats)
@@ -241,7 +252,6 @@ class CoLA():
         [type]
             [description]
         """
-
         dataset = CoLADataSet(g)
         test_loader = GraphDataLoader(
             dataset,
