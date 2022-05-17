@@ -16,7 +16,8 @@ from utils.print import lcprint, cprint
 from dataset import CoLADataSet
 from colautils import get_parse, train_epoch, test_epoch, train_model, multi_round_test, get_staticpseudolabel, get_staticpseudolabel_mask
 from model import CoLAModel
-
+def print_mean_std(arr, descript='.'):
+    print(descript, f":{round(np.mean(arr)*100,2)}({round(np.var(arr)*100, 2)})")
 if __name__ == "__main__":
     args = get_parse()
     seed_everything(args.seed)
@@ -25,7 +26,6 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + str(args.device))
     else:
         device = torch.device("cpu")
-    device = torch.device("cpu")
     # dataset
     dataset = CoLADataSet(args.dataset)
     train_loader = GraphDataLoader(
@@ -42,35 +42,34 @@ if __name__ == "__main__":
         drop_last=False,
         shuffle=False,
     )
-    # model optimizer loss
-    model = CoLAModel(
-        in_feats=dataset[0][0].ndata["feat"].shape[1],
-        out_feats=args.embedding_dim,
-        global_adg=args.global_adg,
-        tau=args.tau,
-        alpha=args.alpha,
-        generative_loss_w=args.generative_loss_w,
-        score_type=args.score_type,
-        loss_type=args.loss_type
-    ).to(device)
-    print(model)
-    
-    # train
-    writer = SummaryWriter(log_dir=args.logdir)
+    final_score_all, a_score_all, s_score_all = [], [], []
+    for i in range(args.run):
+        # model optimizer loss
+        model = CoLAModel(
+            in_feats=dataset[0][0].ndata["feat"].shape[1],
+            out_feats=args.embedding_dim,
+            global_adg=args.global_adg,
+            tau=args.tau,
+            alpha=args.alpha,
+            generative_loss_w=args.generative_loss_w,
+            score_type=args.score_type,
+            loss_type=args.loss_type
+        ).to(device)
+        print(model)
+        
+        # train
+        writer = SummaryWriter(log_dir=args.logdir)
 
-    if not args.continue_train:
         cprint("training", color='info')
         train_model(model, args, train_loader, test_loader, writer, device, pseudo_label_type='none')
         cprint("after training===> multi-round test", color='info')
         # multi-round test to create pseudo label
-        pseudo_labels = multi_round_test(args, test_loader, model, device)
+        final_score, a_score, s_score = multi_round_test(args, test_loader, model, device)
         cprint("self labeling", color='info')
-        torch.save({"model": model, "result": pseudo_labels}, 'pretrain.pt')
-    else:
-        cprint("reload model", color='info')
-        pt = torch.load("pretrain.pt")
-        model, pseudo_labels = pt["model"], pt["result"]
-    # self labeling
-    # optimizer.param_groups[0]['lr'] *= 0.1
-    train_loader.dataset.dataset.ndata['pseudo_label'] = torch.Tensor(pseudo_labels)
-    train_loader.dataset.dataset.ndata['fix_pseudo_label'] = get_staticpseudolabel(pseudo_labels, keep_ratio=args.keep_ratio)
+        final_score_all.append(final_score)
+        a_score_all.append(a_score)
+        s_score_all.append(s_score)
+    print_mean_std(final_score_all, 'final')
+    print_mean_std(a_score_all, 'attr')
+    print_mean_std(s_score_all, 'stru')
+        
