@@ -21,6 +21,10 @@ class ExpRecord():
                 if k not in self.record:
                     self.record[k] = [''] * (len(self.record[list(self.record.keys())[0]])-1)
                 self.record[k].append(dict_record[k])
+            # check out parameters
+            for k in self.record:
+                if k not in dict_record:
+                    self.record[k].append('')
         self.save_record()
 
     def save_record(self):
