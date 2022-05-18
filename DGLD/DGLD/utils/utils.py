@@ -118,6 +118,7 @@ class Multidict2dict():
         helper(inputs)
         return self.result
 
+
 class ParameterShower():
     """[show Parameter using texttable]
     Examples:
@@ -159,16 +160,3 @@ class ParameterShower():
     def show_multilayer(self, inputs: Dict) -> None:
         inputs_simple = self.tool.solve(inputs)
         self.show_dict(inputs_simple)
-
-if __name__ == '__main__':
-    inputs = {
-        "1layer":{
-            "2layer_one":{
-                "3layers1":4,
-                "3layers2":2,
-            },
-            "2layer_two":2
-        }
-    }
-    tool = ParameterShower()
-    tool.show_multilayer(inputs)
