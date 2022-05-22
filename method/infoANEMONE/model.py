@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
-from  dgl.nn.pytorch import EdgeWeightNorm, SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
+from dgl.nn.pytorch import EdgeWeightNorm, SumPooling, AvgPooling, MaxPooling, GlobalAttentionPooling
 
 
 class Discriminator(nn.Module):
@@ -30,6 +30,7 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
     r"""
     a onelayer subgraph GCN can use global adjacent metrix.
     """
+
     def __init__(self, in_feats, out_feats=64, global_adg=True, bias_term=True):
         super(OneLayerGCNWithGlobalAdg, self).__init__()
         self.global_adg = global_adg
@@ -38,7 +39,8 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         if bias_term:
             self.bias = nn.Parameter(torch.Tensor(out_feats))
             self.bias_term = bias_term
-        self.conv = GraphConv(in_feats, out_feats, weight=False, bias=False, norm=self.norm)
+        self.conv = GraphConv(in_feats, out_feats,
+                              weight=False, bias=False, norm=self.norm)
         self.conv.set_allow_zero_in_degree(1)
         self.subg2anchor = torch.nn.Sequential(
             nn.Linear(out_feats, out_feats)
@@ -71,13 +73,13 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         anchor_embs = bg.ndata['feat'][::subgraph_size, :].clone()
         # Anonymization
         bg.ndata['feat'][::subgraph_size, :] = 0
-        anchor_out = torch.matmul(anchor_embs, self.weight) 
+        anchor_out = torch.matmul(anchor_embs, self.weight)
         if self.bias_term:
             anchor_out = anchor_out + self.bias
         anchor_out = self.act(anchor_out)
-        
+
         in_feat = bg.ndata['feat']
-        in_feat = torch.matmul(in_feat, self.weight) 
+        in_feat = torch.matmul(in_feat, self.weight)
         # GCN
         if self.global_adg:
             h = self.conv(bg, in_feat, edge_weight=bg.edata['w'])
@@ -87,35 +89,38 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
             h += self.bias
         h = self.act(h)
         with bg.local_scope():
-            # pooling        
+            # pooling
             subgraph_pool_emb = self.pool(bg, h)
-            gcn_emb = h[::subgraph_size, :] 
+            gcn_emb = h[::subgraph_size, :]
         # return subgraph_pool_emb, anchor_out
         subgraph_pool_emb = self.subg2anchor(subgraph_pool_emb)
         gcn_emb = self.gcn2anchor(gcn_emb)
         # anchor_out = self.anchormlp(anchor_out)
         if return_emb == 'context':
-            return F.normalize(subgraph_pool_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
+            return subgraph_pool_emb, anchor_out
         else:
-            return F.normalize(gcn_emb, p=2, dim=1), F.normalize(anchor_out, p=2, dim=1)
-                
+            return gcn_emb, anchor_out
+
 
 class CoLAModel(nn.Module):
-    def __init__(self, in_feats=300, out_feats=64, global_adg=True, tau=0.5, generative_loss_w=0, alpha=0.8, score_type="score1"):
+    def __init__(self,
+                 in_feats=300, out_feats=64, global_adg=True, tau=0.5, generative_loss_w=0, alpha=0.8, score_type="score1", loss_type='infonce'):
         super(CoLAModel, self).__init__()
-        self.gcn_context = OneLayerGCNWithGlobalAdg(in_feats, out_feats, global_adg)
-        self.gcn_patch = OneLayerGCNWithGlobalAdg(in_feats, out_feats, global_adg)
-        
+        self.gcn_context = OneLayerGCNWithGlobalAdg(
+            in_feats, out_feats, global_adg)
+        self.gcn_patch = OneLayerGCNWithGlobalAdg(
+            in_feats, out_feats, global_adg)
+        self.loss_type = loss_type
         self.discriminator = Discriminator(out_feats)
         self.tau = tau
         self.beta = generative_loss_w
         self.alpha = alpha
         self.score_type = score_type
         self.attr_mlp = torch.nn.Sequential(nn.Linear(out_feats, out_feats),
-        nn.ReLU(),
-        nn.Linear(out_feats, in_feats),
-        nn.ReLU())
-        
+                                            nn.ReLU(),
+                                            nn.Linear(out_feats, in_feats),
+                                            nn.ReLU())
+
     def infonceloss(self, pos_emb, neg_emb, anchor_emb, score_type='score1'):
         r"""
         Parameter:
@@ -154,6 +159,9 @@ class CoLAModel(nn.Module):
             score_{loss4} = log(\frac{x}{B}) - logy = logx - logy - logB 
         \end{align}
         """
+        pos_emb, neg_emb, anchor_emb = F.normalize(pos_emb, p=2, dim=1),\
+            F.normalize(neg_emb, p=2, dim=1),\
+            F.normalize(anchor_emb, p=2, dim=1)  
         tau = self.tau
         epsison = 0.00001
         y = torch.exp(torch.sum(pos_emb*anchor_emb, dim=1) / tau)
@@ -162,39 +170,59 @@ class CoLAModel(nn.Module):
         B = x.shape[0]
         loss = -torch.log(y / (x + epsison))
         if self.score_type == "score1":
-            return loss, y, x / B 
+            return loss, y, x / B
         elif self.score_type == "scoreloss":
             return loss, torch.log(y), torch.log(x)
         elif self.score_type == "scorelossfixbatch":
             return loss, torch.log(y), torch.log(x)-math.log(B)
         elif self.score_type == "score2":
-            return loss, torch.log(y), torch.log(x) / B 
+            return loss, torch.log(y), torch.log(x) / B
         else:
             raise NotImplementedError
+
+    def bceloss(self, pos_emb, neg_emb, anchor_emb, score_type='score1'):
+        pos_score = torch.sigmoid(torch.sum(pos_emb*anchor_emb, dim=1))
+        neg_score = torch.sigmoid(torch.sum(neg_emb*anchor_emb, dim=1))
+
+        pos_loss = -torch.log(pos_score)
+        neg_loss = -torch.log(1-neg_score)
+        loss = pos_loss + neg_loss
+        return loss, pos_score, neg_score
 
     def get_anchor_oral_features(self, bg, feat):
         unbatchg = dgl.unbatch(bg)
         anchor_feat_list = []
         for g in unbatchg:
             anchor_feat = g.ndata['feat'][0, :].clone()
-            anchor_feat_list.append(anchor_feat)        
+            anchor_feat_list.append(anchor_feat)
         # anchor_input
         anchor_embs = torch.stack(anchor_feat_list, dim=0)
         return anchor_embs
 
     def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
-        
-        pos_pool_emb, pos_anchor_out = self.gcn_context(pos_batchg.clone(), pos_in_feat.clone(), return_emb='context')
-        neg_pool_emb, neg_anchor_out = self.gcn_context(neg_batchg.clone(), neg_in_feat.clone(), return_emb='context')
-        
-        pos_gcn_emb, pos_anchor_out = self.gcn_patch(pos_batchg.clone(), pos_in_feat.clone(), return_emb='patch')
-        neg_gcn_emb, neg_anchor_out = self.gcn_patch(neg_batchg.clone(), neg_in_feat.clone(), return_emb='patch')
-        
-        loss_pool, pos_score_pool, neg_score_pool = self.infonceloss(pos_pool_emb,  \
-            neg_pool_emb, pos_anchor_out)
-        loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_pool_emb,  \
-            neg_pool_emb, pos_anchor_out)
 
-        loss = loss_pool*self.alpha + loss_gcn*(1-self.alpha)
+        pos_pool_emb, pos_anchor_out = self.gcn_context(
+            pos_batchg.clone(), pos_in_feat.clone(), return_emb='context')
+        neg_pool_emb, neg_anchor_out = self.gcn_context(
+            neg_batchg.clone(), neg_in_feat.clone(), return_emb='context')
+
+        pos_gcn_emb, pos_anchor_out = self.gcn_patch(
+            pos_batchg.clone(), pos_in_feat.clone(), return_emb='patch')
+        neg_gcn_emb, neg_anchor_out = self.gcn_patch(
+            neg_batchg.clone(), neg_in_feat.clone(), return_emb='patch')
+        if self.loss_type == 'infonce':
+            loss_pool, pos_score_pool, neg_score_pool = self.infonceloss(pos_pool_emb,
+                                                                        neg_pool_emb, pos_anchor_out)
+            loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_gcn_emb,
+                                                                    neg_gcn_emb, pos_anchor_out)
+
+            loss = loss_pool*self.alpha + loss_gcn*(1-self.alpha)
+        elif self.loss_type == 'bce':
+            loss_pool, pos_score_pool, neg_score_pool = self.bceloss(pos_pool_emb,
+                                                                        neg_pool_emb, pos_anchor_out)
+            loss_gcn, pos_score_gcn, neg_score_gcn = self.bceloss(pos_gcn_emb,
+                                                                    neg_gcn_emb, pos_anchor_out)
+            loss = loss_pool*self.alpha + loss_gcn*(1-self.alpha)
+        else:
+            raise NotImplementedError
         return loss, pos_score_pool, pos_score_gcn, neg_score_pool, neg_score_gcn
-

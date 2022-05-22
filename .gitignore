@@ -13,6 +13,7 @@ method/pp/
 method/BiuG/
 method/CoLA/tmp/
 **/log/*
+**/log_bp/*
 **/tmp/*
 *__pycache__
 CoLA/
@@ -20,7 +21,7 @@ method/DOMINANT/run2.sh
 method/infoNCECoLA/dataset/
 method/infoANEMONE/dataset/
 method/zp/dataset/
-method/info-SL-GAD
+method/info-SL-GAD/
 .gitignore
 data/*_dgld.mat
 data/*_pygod.mat
@@ -28,3 +29,4 @@ data/attr-graphs
 data/ogbn_arxiv
 data/acm
 method/infoNCECoLA/all_log/
+*/.vscode

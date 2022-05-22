@@ -25,7 +25,7 @@ if __name__ == "__main__":
         device = torch.device("cuda:" + str(args.device))
     else:
         device = torch.device("cpu")
-
+    device = torch.device("cpu")
     # dataset
     dataset = CoLADataSet(args.dataset)
     train_loader = GraphDataLoader(
@@ -50,7 +50,8 @@ if __name__ == "__main__":
         tau=args.tau,
         alpha=args.alpha,
         generative_loss_w=args.generative_loss_w,
-        score_type=args.score_type
+        score_type=args.score_type,
+        loss_type=args.loss_type
     ).to(device)
     print(model)
     
