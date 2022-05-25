@@ -1,0 +1,4 @@
+dataset,lr,weight_decay,generative_loss_w,keep_ratio,seed,embedding_dim,num_epoch,selflabeling_epcohs,drop_prob,tau,alpha,batch_size,run,subgraph_size,auc_test_rounds,num_workers,negsamp_ratio,device,logdir,pseudotype,score_type,loss_type,global_adg,continue_train,reinit,auc,info
+Cora,1,0.0,0.0,0.95,1,64,100,100,0.0,0.5,0.8,2048,3,4,256,8,1,0,tmp,pseudo,score1,infonce,True,False,True,1.0,test
+Cora,1,0.0,0.0,0.95,1,64,100,100,0.0,0.5,0.8,2048,3,4,256,8,1,0,tmp,pseudo,score1,infonce,True,False,True,1.0,test
+Cora,1,0.0,0.0,0.95,1,64,100,100,0.0,0.5,0.8,2048,3,4,256,8,1,0,tmp,pseudo,score1,infonce,True,False,True,1.0,test

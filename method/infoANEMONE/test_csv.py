@@ -5,14 +5,9 @@ from colautils import get_parse, train_epoch, test_epoch, train_model, multi_rou
 class ExpRecord():
     def __init__(self, filepath='result.csv'):
         self.filepath = filepath
-        if osp.exists(self.filepath):
-            self.record = self.load_record()
-        else:
-            self.record = None
-    def init_record(self, dict_record):
-        pass
 
     def add_record(self, dict_record):
+        self.load_record()
         print(dict_record)
         if not self.record:
             self.record = {k:[v] for k, v in dict_record.items()}
@@ -27,16 +22,22 @@ class ExpRecord():
                     self.record[k].append('')
         self.save_record()
 
+
     def save_record(self):
-        pd.DataFrame(self.record).to_csv(self.filepath, index=None)
-    
+        result = pd.DataFrame(self.record).to_csv(self.filepath, index=None)
+        # print(result.head(10))
+
     def load_record(self):
-        csv_file = pd.read_csv(self.filepath)
-        self.record = {k:list(csv_file[k]) for k in csv_file.columns}
-        return self.record 
+        if osp.exists(self.filepath):
+            csv_file = pd.read_csv(self.filepath)
+            self.record = {k:list(csv_file[k]) for k in csv_file.columns}
+        else:
+            self.record = None
+        
 
 if __name__ == "__main__":
     args = get_parse()
+    args.lr = 1
     exprecord = ExpRecord()
     argsdict = vars(args)
     argsdict['auc'] = 1.0

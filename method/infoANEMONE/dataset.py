@@ -71,7 +71,7 @@ class CoLADataSet(DGLDataset):
 if __name__ == '__main__':
 
     dataset = CoLADataSet()
-    # print(dataset[0].edges())
+
     ans = []
     for i in range(100):
         dataset.random_walk_sampling()
