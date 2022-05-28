@@ -28,5 +28,7 @@ data/*_pygod.mat
 data/attr-graphs
 data/ogbn_arxiv
 data/acm
+DGLD/DGLD/data/acm
+DGLD/DGLD/data/ogbn_arxiv
 method/infoNCECoLA/all_log/
 */.vscode
