@@ -20,7 +20,7 @@ from common.utils import is_bidirected, load_ogbn_arxiv, load_BlogCatalog, load_
 #'BlogCatalog'  'Flickr' 'cora'  'citeseer' 'pubmed' 'ACM' 'ogbn-arxiv'
 # TODO: add all datasets above.
 
-def split_auc(groundtruth, prob,data_name):
+def split_auc(groundtruth, prob,data_name='not_custom'):
     r"""
     print the scoring(AUC) of the two types of anomalies separately.
     Parameter:

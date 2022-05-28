@@ -1,6 +1,16 @@
 import torch
-from ogb.nodeproppred import DglNodePropPredDataset
+
 from scipy.stats import rankdata
+import dgl
+import scipy.io as sio
+import numpy as np
+import scipy.sparse as sp
+from ogb.nodeproppred import DglNodePropPredDataset
+import os
+current_file_name = __file__
+current_dir=os.path.dirname(os.path.dirname(os.path.abspath(current_file_name)))
+data_path =current_dir +'/data/'
+print('data_path:',data_path)
 
 def ranknorm(input_arr):
     r"""
@@ -44,8 +54,99 @@ def is_bidirected(g):
 
     return allclose(src1, dst2) and allclose(src2, dst1)
 
+
+def load_raw_pyg_dataset(data_name='',verbose=True):
+    """Read raw data from pyg and save to mat file.
+        
+    Parameters
+    ----------
+    data_name : str, optional
+        name of dataset, by default ''
+    """
+    assert data_name in ['Cora','Citeseer','Pubmed','BlogCatalog','Flickr','ogbn-arxiv'],\
+        'datasets do not have this data!!!'
+    if data_name in ['Cora','Citeseer','Pubmed','BlogCatalog']:
+        data = AttributedGraphDataset(data_path+'attr-graphs/', data_name,transform=T.NormalizeFeatures())[0]
+        # generate to bidirectional,if has,not genreate. Maybe add self loop on isolated nodes.
+        data.edge_index=to_undirected(data.edge_index)
+    elif data_name in ['Flickr']:
+        data = AttributedGraphDataset(data_path+'attr-graphs/', data_name)[0]
+        data.x=data.x.to_dense()
+    elif data_name in ['ogbn-arxiv']:
+        data = PygNodePropPredDataset(name='ogbn-arxiv',root=data_path)[0]
+        # generate to bidirectional,if has,not genreate. Maybe add self loop on isolated nodes.
+        data.edge_index=to_undirected(data.edge_index)
+    
+    if verbose:
+        print('  PyG dataset: {}'.format(data_name))
+        print('  NumNodes: {}'.format(data.num_nodes))
+        print('  NumEdges: {}'.format(data.num_edges))
+        print('  NumFeats: {}'.format(data.x.shape[1]))
+    
+    #save to mat
+    adj=to_scipy_sparse_matrix(data.edge_index).tocsr()
+    feat=sp.csr_matrix(data.x)
+
+    mat_dict={}
+    mat_dict['Network']=adj
+    mat_dict['Attributes']=feat
+    
+    save_path=data_path+data_name+'_pyg.mat'
+    sio.savemat(save_path,mat_dict)
+    print('save mat data to:',save_path)
+    print('-'*60,'\n\n')
+
+    return data
+
+def load_mat_data2dgl(data_path,verbose=True):
+    """load data from .mat file
+
+    Parameters
+    ----------
+    verbose : bool, optional
+        print info, by default True
+
+    Returns
+    -------
+    list
+        [graph]
+    """
+    mat_path =data_path
+    data_mat = sio.loadmat(mat_path)
+    adj = data_mat['Network']
+    feat = data_mat['Attributes']
+    # feat = preprocessing.normalize(feat, axis=0)
+    truth = data_mat['Label']
+    truth = truth.flatten()
+    graph=dgl.from_scipy(adj)
+    graph.ndata['feat']=torch.from_numpy(feat.toarray()).to(torch.float32)
+    graph.ndata['label']=torch.from_numpy(truth).to(torch.float32)
+    num_classes=len(np.unique(truth))
+
+    if verbose:
+        print('  DGL dataset')
+        print('  NumNodes: {}'.format(graph.number_of_nodes()))
+        print('  NumEdges: {}'.format(graph.number_of_edges()))
+        print('  NumFeats: {}'.format(graph.ndata['feat'].shape[1]))
+        print('  NumClasses: {}'.format(num_classes))
+    if 'ACM' in data_path:
+        print('ACM')
+        return [graph]
+    # # add reverse edges
+    # srcs, dsts = graph.all_edges()
+    # graph.add_edges(dsts, srcs)
+    # add self-loop
+    print(f"Total edges before adding self-loop {graph.number_of_edges()}")
+    graph = graph.remove_self_loop().add_self_loop()
+    
+    print(f"Total edges after adding self-loop {graph.number_of_edges()}")
+    assert is_bidirected(graph) == True
+    return [graph]
+
+
 def load_ogbn_arxiv():
-    data = DglNodePropPredDataset(name="ogbn-arxiv")
+    print('ogbn-arxiv datapath:',current_dir+'/data/')
+    data = DglNodePropPredDataset(name="ogbn-arxiv",root=current_dir+'/data/')
     graph, _ = data[0]
     # add reverse edges
     srcs, dsts = graph.all_edges()
@@ -57,12 +158,55 @@ def load_ogbn_arxiv():
     assert is_bidirected(graph) == True
     return [graph]
 
+def load_BlogCatalog():
+    """load BlogCatalog dgl graph
 
+    Returns
+    -------
+    list
+        [graph]
     
+    Using
+    -------
+    >>> graph=load_BlogCatalog()[0]
+    """
+    return load_mat_data2dgl(data_path=data_path+'BlogCatalog.mat')
+
+
+
+def load_Flickr():
+    """load Flickr dgl graph
+
+    Returns
+    -------
+    list
+        [graph]
+
+    Using
+    -------
+    >>> graph=load_Flickr()[0]
+    """
+    return load_mat_data2dgl(data_path=data_path+'Flickr.mat')
+
+
+def load_ACM():
+    """load ACM dgl graph
+
+    Returns
+    -------
+    list
+        [graph]
+    
+    Using
+    -------
+    >>> graph=load_ACM()[0]
+    """
+    return load_mat_data2dgl(data_path=data_path+'ACM.mat')
+
 
 r"""
 cd CoLA
 python main.py --dataset ACM
 """
 if __name__ == "__main__":
-    load_ogbn_arxiv()
+    load_BlogCatalog()

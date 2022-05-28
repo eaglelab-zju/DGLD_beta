@@ -65,6 +65,7 @@ class DominantModel(nn.Module):
         # decode adjacency matrix
         struct_reconstructed = self.struct_decoder(g, x)
         # return reconstructed matrices
+        
         return struct_reconstructed, x_hat
 
 class Dominant(nn.Module):
@@ -135,7 +136,9 @@ class Dominant(nn.Module):
             print('Using cpu!!!')      
         
         writer = SummaryWriter(log_dir=logdir)
+        
         for epoch in range(num_epoch):
+            
             loss, struct_loss, feat_loss = train_step(
                 self.model, optimizer, graph, features,adj_label,alpha)
             print("Epoch:", '%04d' % (epoch), "train_loss=", "{:.5f}".format(loss.item(
