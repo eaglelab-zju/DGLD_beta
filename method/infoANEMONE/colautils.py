@@ -30,6 +30,8 @@ def get_parse():
     parser.add_argument('--alpha', type=float, default=0.8)
     
     parser.add_argument('--batch_size', type=int, default=2048)
+    parser.add_argument('--run', type=int, default=3)
+    
     parser.add_argument('--subgraph_size', type=int, default=4)
     # parser.add_argument('--readout', type=str, default='avg')  #max min avg  weighted_sum
     parser.add_argument('--auc_test_rounds', type=int)
@@ -223,6 +225,9 @@ def train_model(model, args, train_loader, test_loader, writer, device, pseudo_l
         writer.flush()
     return model
 
+def mean_add_std(arr):
+    return np.mean(arr, axis=1) + np.std(arr, axis=1)
+
 # multi-round test
 def multi_round_test(args, test_loader, model, device):
     predict_scores_patch_arr = []
@@ -236,8 +241,25 @@ def multi_round_test(args, test_loader, model, device):
 
         predict_scores_patch_arr.append(list(predict_scores_patch))
         predict_scores_context_arr.append(list(predict_scores_context))
-        
+    
+    # adapt from the author's code
     predict_score_arr = np.array(predict_scores_patch_arr).T * (1-args.alpha) + \
         np.array(predict_scores_context_arr).T * (args.alpha)
     test_loader.dataset.oraldataset.evaluation_multiround(predict_score_arr)
-    return np.mean(predict_score_arr, axis=1)
+    return test_loader.dataset.oraldataset.evalution(np.mean(predict_score_arr, axis=1))
+
+    # run as the paper described
+    # predict_scores_patch_arr = np.array(predict_scores_patch_arr).T
+    # predict_scores_context_arr = np.array(predict_scores_context_arr).T
+
+    # print('===================================>', 'patch level')
+    # test_loader.dataset.oraldataset.evaluation_multiround(predict_scores_patch_arr)
+
+    # print('===================================>', 'context level')
+    # test_loader.dataset.oraldataset.evaluation_multiround(predict_scores_context_arr)
+    
+    # print('===================================>', 'final score')
+    # final_result = mean_add_std(predict_scores_context_arr) * args.alpha + \
+    #     mean_add_std(predict_scores_patch_arr) * (1-args.alpha)
+    # test_loader.dataset.oraldataset.evalution(final_result)
+    

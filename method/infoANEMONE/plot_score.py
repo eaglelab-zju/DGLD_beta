@@ -5,10 +5,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 from dgl.dataloading import GraphDataLoader
 from torch.utils.tensorboard import SummaryWriter
-
 import sys
-
 sys.path.append("../../")
+
 from common.dataset import GraphNodeAnomalyDectionDataset
 from utils.utils import seed_everything
 from utils.print import lcprint, cprint
@@ -42,8 +41,21 @@ if __name__ == "__main__":
         drop_last=False,
         shuffle=False,
     )
-    final_score_all, a_score_all, s_score_all = [], [], []
-    for i in range(args.run):
+    from test_csv import ExpRecord
+    exprecord = ExpRecord("plotscore.csv")
+    tau_map = {
+        "Cora":0.6,
+        "Citeseer":1.5,
+        "Pubmed":0.2,
+        "BlogCatalog":1.5,
+        "Flickr":2.0,
+        "ACM":0.2,
+        "ogbn-arxiv":0.2,
+    }
+    for alpha in [1.0]:
+        args.tau = tau_map[args.dataset]
+        print(args.tau)
+        args.alpha = alpha
         # model optimizer loss
         model = CoLAModel(
             in_feats=dataset[0][0].ndata["feat"].shape[1],
@@ -66,10 +78,12 @@ if __name__ == "__main__":
         # multi-round test to create pseudo label
         final_score, a_score, s_score = multi_round_test(args, test_loader, model, device)
         cprint("self labeling", color='info')
-        final_score_all.append(final_score)
-        a_score_all.append(a_score)
-        s_score_all.append(s_score)
-    print_mean_std(final_score_all, 'final')
-    print_mean_std(a_score_all, 'attr')
-    print_mean_std(s_score_all, 'stru')
+        args_dict = vars(args)
+        args_dict["auc"] = final_score
+        args_dict["attribute_auc"] = a_score
+        args_dict["structure_auc"] = s_score
+        exprecord.add_record(args_dict)
+
+
+        
         

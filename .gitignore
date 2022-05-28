@@ -15,7 +15,7 @@ method/CoLA/tmp/
 **/log/*
 **/log_bp/*
 **/tmp/*
-*__pycache__
+**/__pycache__/*
 CoLA/
 method/DOMINANT/run2.sh
 method/infoNCECoLA/dataset/
@@ -32,3 +32,4 @@ DGLD/DGLD/data/acm
 DGLD/DGLD/data/ogbn_arxiv
 method/infoNCECoLA/all_log/
 */.vscode
+DGLD/dataset/

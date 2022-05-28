@@ -181,7 +181,7 @@ def test_epoch(epoch, loader, net, device, criterion):
         pos_scores, neg_scores = net(
             pos_subgraph, posfeat, neg_subgraph, negfeat)
         predict_scores.extend(
-            list((neg_scores-pos_scores).detach().cpu().numpy()))
+            list((torch.sigmoid(neg_scores)-torch.sigmoid(pos_scores)).detach().cpu().numpy()))
         loss = loss_fun(pos_scores, neg_scores, criterion, device)
         loss_accum += loss.item()
     loss_accum /= (step + 1)

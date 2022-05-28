@@ -200,7 +200,6 @@ class CoLAModel(nn.Module):
         return anchor_embs
 
     def forward(self, pos_batchg, pos_in_feat, neg_batchg, neg_in_feat):
-
         pos_pool_emb, pos_anchor_out = self.gcn_context(
             pos_batchg.clone(), pos_in_feat.clone(), return_emb='context')
         neg_pool_emb, neg_anchor_out = self.gcn_context(
@@ -215,7 +214,6 @@ class CoLAModel(nn.Module):
                                                                         neg_pool_emb, pos_anchor_out)
             loss_gcn, pos_score_gcn, neg_score_gcn = self.infonceloss(pos_gcn_emb,
                                                                     neg_gcn_emb, pos_anchor_out)
-
             loss = loss_pool*self.alpha + loss_gcn*(1-self.alpha)
         elif self.loss_type == 'bce':
             loss_pool, pos_score_pool, neg_score_pool = self.bceloss(pos_pool_emb,
