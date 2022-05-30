@@ -8,7 +8,7 @@ from sklearn import preprocessing
 from scipy.spatial.distance import euclidean
 import scipy.sparse as sp
 import os
-
+from evaluation import split_auc
 from dgl.data.utils import download
 from dgl import backend as F
 from dgl.data import DGLDataset
