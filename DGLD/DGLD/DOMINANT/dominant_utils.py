@@ -104,6 +104,7 @@ def train_step( model, optimizer, graph, features, adj_label,alpha):
 
     model.train()
     optimizer.zero_grad()
+    
     A_hat, X_hat = model(graph, features)
     # A_hat, X_hat = model(features,adj)
     loss, struct_loss, feat_loss = loss_func(
