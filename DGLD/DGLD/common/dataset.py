@@ -9,7 +9,7 @@ from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 import scipy.sparse as sp
 import os
-from evaluation import split_auc
+from .evaluation import split_auc
 from dgl.data.utils import download
 
 import scipy.io as sio
