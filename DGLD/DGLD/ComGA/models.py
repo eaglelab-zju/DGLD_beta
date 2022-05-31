@@ -15,10 +15,178 @@ import networkx as nx
 import sys
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
-from method.ComGA.comga_utils import get_parse
+from .comga_utils import train_step, test_step,normalize_adj
 
 
-class ComGA_Base(nn.Module):
+class ComGA(nn.Module):
+    """ComGA: Community-Aware Attributed Graph Anomaly Detection
+    ref:https://github.com/DASE4/ComGA
+    
+    Parameters
+    ----------
+    num_nodes : int
+        number of nodes
+    num_feats : int
+        dimension of feature 
+    n_enc_1 : int
+        number of encode1 units
+    n_enc_2 : int
+        number of encode2 units
+    n_enc_3 : int
+        number of encode3 units
+    dropout : float
+        Dropout rate
+    
+    """
+    def __init__(self,num_nodes,num_feats,n_enc_1,n_enc_2,n_enc_3, dropout):
+        super(ComGA, self).__init__()
+        self.model = ComGAModel(num_nodes=num_nodes,num_feats=num_feats,
+                        n_enc_1=n_enc_1,n_enc_2=n_enc_2,n_enc_3=n_enc_3,dropout=dropout)
+    
+    def fit(self,graph,lr=5e-3,logdir='tmp',num_epoch=1,alpha=0.7,eta=5.0,theta=40.0,device='cpu'):
+        """Fitting model
+
+        Parameters
+        ----------
+        graph : dgl.DGLGraph
+            graph dataset
+        lr : float, optional
+            learning rate, by default 5e-3
+        logdir : str, optional
+            log dir, by default 'tmp'
+        num_epoch : int, optional
+            number of training epochs , by default 1
+        alpha : float, optional
+            balance parameter, by default 0.8
+        eta : float, optional
+            Attribute penalty balance parameter, by default 5.0
+        theta : float, optional
+            structure penalty balance parameter, by default 40.0
+        device : str, optional
+            cuda id, by default 'cpu'
+        """
+        print('*'*20,'training','*'*20)
+
+        features = graph.ndata['feat']
+        adj = graph.adj(scipy_fmt='csr')
+
+        A=adj.toarray()
+        k1 = np.sum(A, axis=1)
+        k2 = k1.reshape(k1.shape[0], 1)
+        k1k2 = k1 * k2
+        num_loop=0
+        for i in range(adj.shape[0]):
+            if adj[i,i]==1:
+                num_loop+=1
+        m=(np.sum(A)-num_loop)/2+num_loop
+        Eij = k1k2 / (2 * m)
+        B =np.array(A - Eij)
+
+        print(np.sum(adj))
+        adj_label = torch.FloatTensor(adj.toarray())
+        B = torch.FloatTensor(B)
+        
+        print(graph)
+        print('B shape:', B.shape)
+        print('adj_label shape:', adj_label.shape)
+        print('features shape:', features.shape)
+        
+
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
+
+        if torch.cuda.is_available() and device != 'cpu':
+            device = torch.device("cuda:" + device)
+            print('Using gpu!!!')
+        else:
+            device = torch.device("cpu")
+            print('Using cpu!!!')      
+
+        self.model = self.model.to(device)
+        graph = graph.to(device)
+        features = features.to(device)
+        adj_label = adj_label.to(device)
+        B = B.to(device)
+    
+        writer = SummaryWriter(log_dir=logdir)
+        
+        for epoch in range(num_epoch):
+            loss,struct_loss, feat_loss,kl_loss,re_loss,_ = train_step(
+                self.model, optimizer, graph, features, B,adj_label,alpha,eta,theta,device)
+            print("Epoch:", '%04d' % (epoch), "train_loss=", "{:.5f}".format(loss.item(
+                    )),"train/kl_loss=", "{:.5f}".format(kl_loss.item()),
+                    "train/struct_loss=", "{:.5f}".format(struct_loss.item()), "train/feat_loss=", "{:.5f}".format(feat_loss.item()),
+            )
+            writer.add_scalars(
+                "loss",
+                {"loss": loss, "struct_loss": struct_loss, "feat_loss": feat_loss},
+                epoch,
+            )
+            writer.flush()
+
+
+    def predict(self, graph, alpha=0.7,eta=5.0,theta=40.0,device='cpu'):
+        """predict and return anomaly score of each node
+
+        Parameters
+        ----------
+        graph : dgl.DGLGraph
+            graph dataset
+        alpha : float, optional
+            balance parameter, by default 0.8
+        eta : float, optional
+            Attribute penalty balance parameter, by default 5.0
+        theta : float, optional
+            structure penalty balance parameter, by default 40.0
+        device : str, optional
+            cuda id, by default 'cpu'
+
+        Returns
+        -------
+        numpy.ndarray
+            anomaly score of each node
+        """
+        print('*'*20,'predict','*'*20)
+
+        features = graph.ndata['feat']
+        adj = graph.adj(scipy_fmt='csr')
+
+        A=adj.toarray()
+        k1 = np.sum(A, axis=1)
+        k2 = k1.reshape(k1.shape[0], 1)
+        k1k2 = k1 * k2
+        num_loop=0
+        for i in range(adj.shape[0]):
+            if adj[i,i]==1:
+                num_loop+=1
+        m=(np.sum(A)-num_loop)/2+num_loop
+        Eij = k1k2 / (2 * m)
+        B =np.array(A - Eij)
+
+        print(np.sum(adj))
+        adj_label = torch.FloatTensor(adj.toarray())
+        B = torch.FloatTensor(B)
+        
+        print(graph)
+        print('B shape:', B.shape)
+        print('adj_label shape:', adj_label.shape)
+        print('features shape:', features.shape)
+
+        if torch.cuda.is_available() and device != 'cpu':
+            device = torch.device("cuda:" + device)
+            print('Using gpu!!!')
+        else:
+            device = torch.device("cpu")
+            print('Using cpu!!!')      
+
+        self.model = self.model.to(device)
+        graph = graph.to(device)
+        features = features.to(device)
+        adj_label = adj_label.to(device)
+        B = B.to(device)
+        predict_score = test_step(self.model, graph, features, B,adj_label, alpha, eta, theta,device)
+        return predict_score
+
+class ComGAModel(nn.Module):
     """
     Description
     -----------
@@ -47,7 +215,7 @@ class ComGA_Base(nn.Module):
                  n_enc_1, n_enc_2, n_enc_3,
                  dropout,
                  ):
-        super(ComGA_Base, self).__init__()
+        super(ComGAModel, self).__init__()
         self.commAE=CommunityAE(num_nodes,n_enc_1, n_enc_2, n_enc_3,dropout)
         self.tgcnEnc=tGCNEncoder(num_feats,n_enc_1, n_enc_2, n_enc_3,dropout)
         self.attrDec=AttrDecoder(num_feats,n_enc_1, n_enc_2, n_enc_3,dropout)
@@ -100,7 +268,7 @@ class CommunityAE(nn.Module):
     n_enc_3 : int
         number of encode3 units
     dropout : float
-        Dropout rate  
+        Dropout rate
 
     Returns
     -------
@@ -169,7 +337,7 @@ class tGCNEncoder(nn.Module):
         number of encode3 units
     dropout : float
         Dropout rate
-
+    
     Returns
     -------
     x : torch.Tensor

@@ -34,3 +34,4 @@ DGLD/DGLD/data/ogbn_arxiv
 method/infoNCECoLA/all_log/
 */.vscode
 DGLD/dataset/
+**__pycache__

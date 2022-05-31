@@ -21,8 +21,12 @@ class AnomalyDAE(nn.Module):
     ----------
     feat_size : int
         dimension of feature 
-    hidden_size : int
-        dimension of hidden embedding (default: 64)
+    num_nodes : int
+        number of nodes
+    embed_dim : int
+        dimension of hidden embedding (default: 256)
+    out_dim : int
+        dimension of output embedding (default: 128)
     dropout : float
         Dropout rate
     
@@ -47,6 +51,10 @@ class AnomalyDAE(nn.Module):
             number of training epochs , by default 1
         alpha : float, optional
             balance parameter, by default 0.8
+        eta : float, optional
+            Attribute penalty balance parameter, by default 5.0
+        theta : float, optional
+            structure penalty balance parameter, by default 40.0
         device : str, optional
             cuda id, by default 'cpu'
         """
@@ -101,6 +109,10 @@ class AnomalyDAE(nn.Module):
             graph dataset
         alpha : float, optional
             balance parameter, by default 0.8
+        eta : float, optional
+            Attribute penalty balance parameter, by default 5.0
+        theta : float, optional
+            structure penalty balance parameter, by default 40.0
         device : str, optional
             cuda id, by default 'cpu'
 

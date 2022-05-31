@@ -1,6 +1,5 @@
 """
 AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks
-reference:https://github.com/pygod-team/pygod/blob/main/pygod/models/anomalydae.py
 """
 from turtle import forward
 import torch
