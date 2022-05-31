@@ -69,13 +69,9 @@ class CoLADataSet(DGLDataset):
         pass
 
 if __name__ == '__main__':
-
     dataset = CoLADataSet()
-
     ans = []
     for i in range(100):
         dataset.random_walk_sampling()
         ans.append(dataset[502][1].ndata[dgl.NID].numpy().tolist())
     print(set([str(t) for t in ans]))
-    # graph, label = dataset[0]
-    # print(graph, label)

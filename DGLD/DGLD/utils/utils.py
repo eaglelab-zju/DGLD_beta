@@ -9,7 +9,49 @@ from typing import *
 def print_shape(*a):
     for t in a:
         print(t.shape)
-        
+
+def print_format_dict(dict_input):
+    """[print dict with json for a decent show]
+    Parameters
+    ----------
+    dict_input : [Dict]
+        [dict to print]
+    """
+    print(json.dumps(dict_input, indent=4, separators=(',', ':')))
+
+def loadargs_from_json(filename, indent=4):
+    """[load args from a format json file]
+    Parameters
+    ----------
+    filename : [file name]
+        [json filename]
+    indent : int, optional
+        [description], by default 4
+
+    Returns
+    -------
+    [Dict]
+        [args parameters ]
+    """
+    f = open(filename, "r") 
+    content = f.read()
+    args = json.loads(content)
+    return args
+
+def saveargs2json(jsonobject, filename, indent=4):
+    """[save args parameters to json with a decent format]
+    Parameters
+    ----------
+    jsonobject : [Dict]
+        [dict object to save]
+    filename : [str]
+        [file name]
+    indent : int, optional
+        [description], by default 4
+    """
+    with open(filename, "w") as write_file:
+        json.dump(jsonobject, write_file, indent=indent, separators=(',', ':'))
+
 def seed_everything(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -160,3 +202,4 @@ class ParameterShower():
     def show_multilayer(self, inputs: Dict) -> None:
         inputs_simple = self.tool.solve(inputs)
         self.show_dict(inputs_simple)
+

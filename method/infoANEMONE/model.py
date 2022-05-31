@@ -120,7 +120,24 @@ class CoLAModel(nn.Module):
                                             nn.ReLU(),
                                             nn.Linear(out_feats, in_feats),
                                             nn.ReLU())
-
+    def infoncelosslogsumexp(self, pos_emb, neg_emb, anchor_emb, score_type='score1'):
+        pos_emb, neg_emb, anchor_emb = F.normalize(pos_emb, p=2, dim=1),\
+            F.normalize(neg_emb, p=2, dim=1),\
+            F.normalize(anchor_emb, p=2, dim=1)  
+        tau = self.tau
+        epsison = 0.00001
+        # y = torch.exp(torch.sum(pos_emb*anchor_emb, dim=1) / tau)
+        log_y = torch.sum(pos_emb*anchor_emb, dim=1) / tau
+        key_emb = neg_emb
+        x_w = anchor_emb @ key_emb.T / tau
+        x_w_max = x_w.max(dim=1)[0]
+        x_w_exp = torch.exp(x_w - x_w_max)
+        log_x = torch.log(x_w_exp.sum(1))+x_w_max
+        B = pos_emb.shape[0]
+        # loss = -torch.log(y / (x + epsison))
+        loss = -log_y + log_x
+        return loss, log_y, log_x-math.log(B)
+        
     def infonceloss(self, pos_emb, neg_emb, anchor_emb, score_type='score1'):
         r"""
         Parameter:
