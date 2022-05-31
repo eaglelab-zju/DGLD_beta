@@ -82,7 +82,7 @@ def get_parse():
         "Citeseer":3703,
         "Pubmed":500,
         "BlogCatalog":8189,
-        "Flickr":12407,
+        "Flickr":12047,
         "ACM":8337,
         "ogbn-arxiv":128,
     }

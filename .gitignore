@@ -2,6 +2,7 @@ method/CoLA/dataset/*
 *.pt
 *.zip
 t.py
+*.png
 *.pyc
 .vscode/settings.json
 EDA.ipynb

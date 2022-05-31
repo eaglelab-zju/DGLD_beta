@@ -89,3 +89,7 @@ ACM,0.0005,0.0,0.0,0.95,1,64,400,100,0.0,0.2,0.6,4096,1,4,256,8,1,0,log/ACMplots
 ACM,0.0005,0.0,0.0,0.95,1,64,400,100,0.0,0.2,0.8,4096,1,4,256,8,1,0,log/ACMplotscore,pseudo,scorelossfixbatch,infonce,True,False,True,0.8575782122884412,-1.0,-1.0
 ACM,0.0005,0.0,0.0,0.95,1,64,400,100,0.0,0.2,0.9,4096,1,4,256,8,1,0,log/ACMplotscore,pseudo,scorelossfixbatch,infonce,True,False,True,0.8628571720776308,-1.0,-1.0
 ACM,0.0005,0.0,0.0,0.95,1,64,400,100,0.0,0.2,1.0,4096,1,4,256,8,1,0,log/ACMplotscore,pseudo,scorelossfixbatch,infonce,True,False,True,0.8646874666233119,-1.0,-1.0
+ogbn-arxiv,0.001,0.0,0.0,0.95,1,64,20,100,0.0,0.2,0.0,4096,5,4,20,8,1,0,log/ogbn-arxivfinal_cola,pseudo,scorelossfixbatch,infonce,True,False,True,0.8680901329309083,0.8901175583485876,0.8460627075132288
+Cora,0.001,0.0,0.0,0.95,1,64,100,100,0.0,0.6,0.0,4096,5,4,256,8,1,0,log/Corafinal_cola,pseudo,scorelossfixbatch,infonce,True,False,True,0.8390513421944227,0.8106697941099816,0.8674328902788637
+ogbn-arxiv,0.001,0.0,0.0,0.95,1,64,20,100,0.0,0.2,0.0,4096,5,4,20,8,1,0,log/ogbn-arxivfinal_ane,pseudo,scorelossfixbatch,infonce,True,False,True,0.8719802909623716,0.8949215444392067,0.8490390374855367
+Cora,0.001,0.0,0.0,0.95,1,64,100,100,0.0,0.6,0.0,4096,5,4,256,8,1,0,log/Corafinal_ane,pseudo,scorelossfixbatch,infonce,True,False,True,0.8345504300234559,0.8016158457127964,0.8674850143341151

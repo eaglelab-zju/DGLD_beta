@@ -16,7 +16,6 @@ from .colautils import train_epoch, test_epoch
 
 import numpy as np
 
-
 class Discriminator(nn.Module):
     def __init__(self, out_feats):
         super(Discriminator, self).__init__()
