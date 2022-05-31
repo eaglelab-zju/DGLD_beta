@@ -1,6 +1,5 @@
 """
-AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks
-reference:https://github.com/pygod-team/pygod/blob/main/pygod/models/anomalydae.py
+ComGA: Community-Aware Attributed Graph Anomaly Detection
 """
 from turtle import forward
 import torch
@@ -19,7 +18,6 @@ from torch.utils.tensorboard import SummaryWriter
 from method.ComGA.comga_utils import get_parse
 
 
-
 class ComGA_Base(nn.Module):
     """
     Description
@@ -29,19 +27,18 @@ class ComGA_Base(nn.Module):
 
     Parameters
     ----------
-    in_feat_dim : int
-         Dimension of input feature
-    in_num_dim: int
-         Dimension of the input number of nodes
-    embed_dim: int
-         Dimension of the embedding after the first reduced linear layer (D1)   
-    out_dim : int
-         Dimension of final representation
-    dropout : float, optional
-        Dropout rate of the model
-        Default: 0
-    act: F, optional
-         Choice of activation function
+    num_nodes : int
+        number of nodes
+    num_feats : int
+        dimension of feature 
+    n_enc_1 : int
+        number of encode1 units
+    n_enc_2 : int
+        number of encode2 units
+    n_enc_3 : int
+        number of encode3 units
+    dropout : float
+        Dropout rate
     """
 
     def __init__(self,
@@ -94,12 +91,16 @@ class CommunityAE(nn.Module):
     
     Parameters
     ----------
-    
-
-    dropout: float
-        dropout probability for the linear layer
-    act: F, optional
-         Choice of activation function   
+    num_nodes : int
+        number of nodes
+    n_enc_1 : int
+        number of encode1 units
+    n_enc_2 : int
+        number of encode2 units
+    n_enc_3 : int
+        number of encode3 units
+    dropout : float
+        Dropout rate  
 
     Returns
     -------
@@ -147,8 +148,6 @@ class CommunityAE(nn.Module):
         return hidden1,hidden2,z_a,community_reconstructions
 
 
-
-
 class tGCNEncoder(nn.Module):
     """
     Description
@@ -160,7 +159,16 @@ class tGCNEncoder(nn.Module):
 
     Parameters
     ----------
-    
+    in_feats : int
+        dimension of feature 
+    n_enc_1 : int
+        number of encode1 units
+    n_enc_2 : int
+        number of encode2 units
+    n_enc_3 : int
+        number of encode3 units
+    dropout : float
+        Dropout rate
 
     Returns
     -------
@@ -206,8 +214,16 @@ class AttrDecoder(nn.Module):
 
     Parameters
     ----------
-
-
+    in_feats : int
+        dimension of feature 
+    n_enc_1 : int
+        number of encode1 units
+    n_enc_2 : int
+        number of encode2 units
+    n_enc_3 : int
+        number of encode3 units
+    dropout : float
+        Dropout rate
 
     Returns
     -------
@@ -250,7 +266,8 @@ class StruDecoder(nn.Module):
 
     Parameters
     ----------
-
+    dropout : float
+        Dropout rate
 
     Returns
     -------
