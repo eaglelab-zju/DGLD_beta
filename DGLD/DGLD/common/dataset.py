@@ -9,7 +9,6 @@ from sklearn.metrics import roc_auc_score
 from scipy.spatial.distance import euclidean
 import scipy.sparse as sp
 import os
-from .evaluation import split_auc
 from dgl.data.utils import download
 
 import scipy.io as sio
@@ -78,15 +77,18 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             "BlogCatalog":"load_BlogCatalog()",
             "Flickr":"load_Flickr()"
         }
-        if self.dataset_name != 'custom':
+        if self.dataset_name != 'custom' and self.dataset_name != 'ACM':
             assert self.dataset_name in self.q_map and self.dataset_name in self.dataset_map, self.dataset_name
             self.q = self.q_map[name]
             self.k = k
             self.seed = 42
             self.dataset = eval(self.dataset_map[self.dataset_name])[0]
+        elif self.dataset_name == 'ACM':
+            self.dataset = eval(self.dataset_map[self.dataset_name])[0]
+            y_data = self.dataset.ndata['label']
         else:
             self.dataset = g_data
-        if self.dataset_name != 'custom':
+        if self.dataset_name != 'custom' and self.dataset_name != 'ACM':
             assert is_bidirected(self.dataset) == True
         self.init_anomaly_label(label=y_data)
 
@@ -303,7 +305,7 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
 
 
 
-def test_cutom_dataset():
+def test_custom_dataset():
     my_g = dgl.data.CoraGraphDataset()[0]
     label = torch.ones(my_g.num_nodes())
     dataset = GraphNodeAnomalyDectionDataset('custom', g_data=my_g, y_data=label)
@@ -311,7 +313,7 @@ def test_cutom_dataset():
     print("anomaly_label", dataset.anomaly_label)
 
 if __name__ == "__main__":
-    test_cutom_dataset()
+    test_custom_dataset()
     data_path = '../data/'
     well_test_dataset = ["Cora", "Pubmed", "Citeseer","BlogCatalog","Flickr","ACM", "ogbn-arxiv"]
     num_nodes_list = []
@@ -322,11 +324,11 @@ if __name__ == "__main__":
     
     for data_name in well_test_dataset:
         print("\ndataset:", data_name)
-        if data_name=='ACM':
-            g=load_ACM()[0]
-            dataset = GraphNodeAnomalyDectionDataset(name='custom',g_data=g,y_data=g.ndata['label'])
-        else:
-            dataset = GraphNodeAnomalyDectionDataset(name=data_name)
+        # if data_name=='ACM':
+        #     g=load_ACM()[0]
+        #     dataset = GraphNodeAnomalyDectionDataset(name='custom',g_data=g,y_data=g.ndata['label'])
+        # else:
+        dataset = GraphNodeAnomalyDectionDataset(name=data_name)
 
         print("num_anomaly:", dataset.num_anomaly)
         print("anomaly_label", dataset.anomaly_label)

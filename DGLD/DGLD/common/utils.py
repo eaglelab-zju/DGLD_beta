@@ -209,4 +209,4 @@ cd CoLA
 python main.py --dataset ACM
 """
 if __name__ == "__main__":
-    load_BlogCatalog()
+    load_ACM()
