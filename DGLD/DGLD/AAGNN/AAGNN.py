@@ -174,6 +174,7 @@ class model_base(nn.Module):
         self.a_1 = nn.Parameter(torch.rand(1, out_feats))
         self.a_2 = nn.Parameter(torch.rand(1, out_feats))
         self.LeakyReLU = nn.LeakyReLU()
+        self.softmax = nn.Softmax(dim=1)
     
     def forward(self, inputs, adj_matrix, eye_matrix):
         """
@@ -202,8 +203,9 @@ class model_base(nn.Module):
         attention_A = adj_matrix * zi
         attention_B = adj_matrix * (eye_matrix * zj)
         attention_matrix = self.LeakyReLU(attention_A + attention_B)
-        attention_matrix = torch.exp(attention_matrix) * adj_matrix
-        attention_matrix = attention_matrix / torch.sum(attention_matrix, dim=1).reshape(-1, 1)
+        attention_matrix = self.softmax(attention_matrix)
+
+        #print(np.max(attention_matrix.cpu().data.numpy()))
         h = z - torch.mm(attention_matrix, z)
         return F.relu(h)
     
