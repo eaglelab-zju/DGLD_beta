@@ -1,7 +1,7 @@
 from sklearn.metrics import roc_auc_score
 import numpy as np
 
-def split_auc(groundtruth, prob,data_name='not_custom'):
+def split_auc(groundtruth, prob):
     r"""
     print the scoring(AUC) of the two types of anomalies separately.
     Parameter:
@@ -18,7 +18,7 @@ def split_auc(groundtruth, prob,data_name='not_custom'):
     """
     s_score = -1
     a_score = -1
-    if data_name != 'custom':
+    try:
         str_pos_idx = groundtruth == 1
         attr_pos_idx = groundtruth == 2
         norm_idx = groundtruth == 0
@@ -36,7 +36,8 @@ def split_auc(groundtruth, prob,data_name='not_custom'):
         a_score = roc_auc_score(attr_data_groundtruth, attr_data_predict)
         print("structural anomaly score:", s_score)
         print("attribute anomaly score:", a_score)
-
+    except ValueError:
+        pass
     final_score = roc_auc_score(np.where(groundtruth == 0, 0, 1), prob)
 
     print("final anomaly score:", final_score)
