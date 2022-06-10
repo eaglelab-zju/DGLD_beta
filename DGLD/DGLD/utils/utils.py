@@ -1,6 +1,7 @@
 import numpy as np
 import torch
-import random
+import dgl
+import random,os
 import os.path as osp
 import pandas as pd
 from texttable import Texttable
@@ -56,7 +57,10 @@ def seed_everything(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)
+    dgl.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
     if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
         torch.cuda.manual_seed(seed)
 
 class ExpRecord():
