@@ -26,3 +26,6 @@ torch==1.11.0 %(CPU)
 ```
 
 ## pip or conda:
+### pip
+### install from source code
+### conda(optional)
