@@ -12,16 +12,6 @@ import torch
 import random
 import torch.nn.functional as F
 
-def random_seed(seed):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
-
 def get_parse():
     parser = argparse.ArgumentParser(
         description='ComGA: Community-Aware Attributed Graph Anomaly Detection')
@@ -34,11 +24,10 @@ def get_parse():
                         help='dimension of hidden embedding (default: 256)')
     parser.add_argument('--out_dim', type=int, default=128,
                         help='dimension of output embedding (default: 128)')
-    parser.add_argument('--num_epoch', type=int,
-                        default=100, help='Training epoch')
+    parser.add_argument('--num_epoch', type=int, help='Training epoch')
     parser.add_argument('--m', type=int,
                         default=171743, help='num of edges')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('--lr', type=float, help='learning rate')
     parser.add_argument('--dropout', type=float,
                         default=0.0, help='Dropout rate')
     parser.add_argument('--weight_decay', type=float,
@@ -83,7 +72,6 @@ def get_parse():
         args.m=171743
     # elif args.dataset == ''
 
-    random_seed(args.seed)
 
     in_feature_map = {
         "Cora":1433,
@@ -105,6 +93,7 @@ def get_parse():
     }
     final_args_dict = {
         "dataset": args.dataset,
+        "seed": args.seed,
         "model":{
             "num_nodes":num_nodes_map[args.dataset],
             "num_feats":in_feature_map[args.dataset],
