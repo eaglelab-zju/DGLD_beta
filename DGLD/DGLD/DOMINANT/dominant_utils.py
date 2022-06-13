@@ -51,6 +51,30 @@ def get_parse():
         else:
             args.num_epoch = 10
 
+    if args.dataset == 'Citeseer':
+        args.alpha = 0.8
+        args.seed = 4096
+        args.dropout = 0.3
+        args.hidden_dim = 32
+    elif args.dataset == 'Pubmed':
+        args.alpha = 0.8
+        args.seed = 4096
+        args.dropout = 0.3
+        args.hidden_dim = 128
+    elif args.dataset == 'Flickr':
+        args.alpha = 0.6
+        args.seed = 1024
+        args.dropout = 0.0
+        args.hidden_dim = 64
+    elif args.dataset == 'ACM':
+        args.alpha = 0.2
+        args.seed = 4096
+        args.dropout = 0.0
+        args.hidden_dim = 16
+        # args.lr = 1e-5
+        args.num_epoch = 300
+
+
     in_feature_map = {
         "Cora":1433,
         "Citeseer":3703,
