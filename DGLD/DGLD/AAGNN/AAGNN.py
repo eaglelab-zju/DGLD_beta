@@ -26,7 +26,7 @@ class AAGNN(nn.Module):
         The dimension of output feature.
 
     Examples
-    --------
+    -------
     >>> from DGLD.AAGNN import AAGNN
     >>> model = AAGNN(in_feats=in_feats, out_feats=300)
     >>> model.fit(graph, num_epoch=30, device='cuda:0', subgraph_size=32)
@@ -57,8 +57,8 @@ class AAGNN(nn.Module):
         logdir: str
             The storage address of the training log.
 
-        Returns:
-        ----------
+        Returns
+        -------
         None
         """
 
@@ -117,8 +117,8 @@ class AAGNN(nn.Module):
         device : str
             The number of times you want to train the model.
 
-        Returns:
-        ----------
+        Returns
+        -------
         score : numpy
             A vector of decimals representing the anomaly score for each node.
         """
@@ -164,7 +164,7 @@ class model_base(nn.Module):
         The dimension of output feature.
 
     Examples
-    --------
+    -------
     >>> self.model = model_base(in_feats, out_feats)
     """
 
@@ -191,8 +191,8 @@ class model_base(nn.Module):
         eye_matrix : tensor
             This is an adjacency matrix of sampled subgraphs.
 
-        Returns:
-        ----------
+        Returns
+        -------
         h : tensor
             Results of model forward propagation calculations.
         """
@@ -221,8 +221,8 @@ class model_base(nn.Module):
         p : float
             All node feature vectors of graph data.
 
-        Returns:
-        ----------
+        Returns
+        -------
         node_ids : numpy.ndarray
             The ID of the positive sample node.
         """
@@ -257,8 +257,8 @@ class model_base(nn.Module):
         device : str
             The number of times you want to train the model.
 
-        Returns:
-        ----------
+        Returns
+        -------
         loss : tensor
             The loss of model output.
         """
@@ -284,8 +284,8 @@ class model_base(nn.Module):
         out : tensor
             Node vector representation output after model training.
 
-        Returns:
-        ----------
+        Returns
+        -------
         score : numpy.ndarray
             Anomaly Score of Nodes.
         """

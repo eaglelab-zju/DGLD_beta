@@ -24,7 +24,7 @@ class AAGNN_batch(nn.Module):
         The dimension of output feature.
 
     Examples
-    --------
+    -------
     >>> from DGLD.AAGNN import AAGNN_batch
     >>> model = AAGNN_batch(in_feats=in_feats, out_feats=300)
     >>> model.fit(graph, num_epoch=30, device='cuda:0', subgraph_size=32)
@@ -58,8 +58,8 @@ class AAGNN_batch(nn.Module):
         subgraph_size : int
             The size of training subgraph.
 
-        Returns:
-        ----------
+        Returns
+        -------
         None
         """
         
@@ -119,8 +119,8 @@ class AAGNN_batch(nn.Module):
         subgraph_size : int
             The size of training subgraph.
 
-        Returns:
-        ----------
+        Returns
+        -------
         score : numpy
             A vector of decimals representing the anomaly score for each node.
         """
@@ -171,8 +171,8 @@ class AAGNN_batch(nn.Module):
         edge_dic: dict
             The input node-to-node relationship dictionary.
 
-        Returns:
-        ----------
+        Returns
+        -------
         adj_matrix : numpy.ndarray
             This is an adjacency matrix of sampled subgraphs.
 
@@ -245,8 +245,8 @@ class AAGNN_batch(nn.Module):
             The input node-to-node relationship dictionary.
 
 
-        Returns:
-        ----------
+        Returns
+        -------
         center : numpy.ndarray
             The center vector of all samples.
         """
@@ -290,8 +290,8 @@ class AAGNN_batch(nn.Module):
         device : str
             The number of times you want to train the model.
 
-        Returns:
-        ----------
+        Returns
+        -------
         loss : tensor
             The loss of model output.
         """
@@ -316,7 +316,7 @@ class model_base(nn.Module):
         The dimension of output feature.
 
     Examples
-    --------
+    -------
     >>> self.model = model_base(in_feats, out_feats)
     """
 
@@ -347,8 +347,8 @@ class model_base(nn.Module):
             This is a vector marking which nodes are the target nodes we need.
 
 
-        Returns:
-        ----------
+        Returns
+        -------
         h : tensor
             Results of model forward propagation calculations.
         """
@@ -381,8 +381,8 @@ class model_base(nn.Module):
         device : str
             The number of times you want to train the model.
 
-        Returns:
-        ----------
+        Returns
+        -------
         node_ids : numpy.ndarray
             The ID of the positive sample node.
         """
@@ -412,8 +412,8 @@ class model_base(nn.Module):
         out : tensor
             Node vector representation output after model training.
 
-        Returns:
-        ----------
+        Returns
+        -------
         score : numpy.ndarray
             Anomaly Score of Nodes.
         """
