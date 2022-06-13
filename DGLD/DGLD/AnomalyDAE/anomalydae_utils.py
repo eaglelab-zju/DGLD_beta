@@ -11,14 +11,6 @@ import numpy as np
 import torch
 import random
 
-def random_seed(seed):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
 
 
 def get_parse():
@@ -33,9 +25,8 @@ def get_parse():
                         help='dimension of hidden embedding (default: 256)')
     parser.add_argument('--out_dim', type=int, default=128,
                         help='dimension of output embedding (default: 128)')
-    parser.add_argument('--num_epoch', type=int,
-                        default=100, help='Training epoch')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('--num_epoch', type=int, help='Training epoch')
+    parser.add_argument('--lr', type=float, help='learning rate')
     parser.add_argument('--dropout', type=float,
                         default=0.0, help='Dropout rate')
     parser.add_argument('--weight_decay', type=float,
@@ -74,7 +65,7 @@ def get_parse():
         else:
             args.num_epoch = 10
 
-    random_seed(args.seed)
+    
 
     in_feature_map = {
         "Cora":1433,
@@ -96,6 +87,7 @@ def get_parse():
     }
     final_args_dict = {
         "dataset": args.dataset,
+        "seed":args.seed,
         "model":{
             "feat_size":in_feature_map[args.dataset],
             "num_nodes":num_nodes_map[args.dataset],
