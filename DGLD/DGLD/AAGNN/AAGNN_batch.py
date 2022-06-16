@@ -29,10 +29,10 @@ class AAGNN_batch(nn.Module):
     >>> model = AAGNN_batch(in_feats=in_feats, out_feats=300)
     >>> model.fit(graph, num_epoch=30, device='cuda:0', subgraph_size=32)
     """
-    def __init__(self, in_feats, out_feats):
+    def __init__(self, feat_size, out_dim=300):
         super().__init__()
-        self.model = model_base(in_feats, out_feats)
-        self.out_feats = out_feats
+        self.model = model_base(feat_size, out_dim)
+        self.out_feats = out_dim
     
     def fit(self, graph, num_epoch=100, device='cpu', lr=0.0001, logdir='tmp', subgraph_size=4096):
         """
@@ -66,7 +66,9 @@ class AAGNN_batch(nn.Module):
         print('-'*40, 'training', '-'*40)
         print(graph)
         features = graph.ndata['feat']
-
+        if device != 'cpu':
+            device = 'cuda:' + device
+        print('device=',device)
         model = self.model.to(device)
         opt = torch.optim.Adam(model.parameters(), lr=lr)
         
@@ -137,6 +139,9 @@ class AAGNN_batch(nn.Module):
 
         score = []
         node_ids = np.arange(graph.ndata['feat'].shape[0])
+        if device != 'cpu':
+            device = 'cuda:' + device
+            
         model = self.model.to(device)
         for index in range(0, len(node_ids), subgraph_size):
                 L = index

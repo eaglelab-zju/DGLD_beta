@@ -21,9 +21,10 @@ def random_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 
+
 def get_parse():
     parser = argparse.ArgumentParser(
-        description='AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks')
+        description='AAGNN: Subtractive Aggregation for Attributed Network Anomaly Detection')
     # "Cora", "Pubmed", "Citeseer"
     parser.add_argument('--dataset', type=str, default='Cora')
     parser.add_argument('--seed', type=int, default=7)
@@ -36,6 +37,7 @@ def get_parse():
     parser.add_argument('--num_epoch', type=int,
                         default=100, help='Training epoch')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+    parser.add_argument('--batch_size', type=int, default=300)
     parser.add_argument('--dropout', type=float,
                         default=0.0, help='Dropout rate')
     parser.add_argument('--weight_decay', type=float,
@@ -98,24 +100,15 @@ def get_parse():
         "dataset": args.dataset,
         "model":{
             "feat_size":in_feature_map[args.dataset],
-            "num_nodes":num_nodes_map[args.dataset],
-            "embed_dim":args.embed_dim,
-            "out_dim":args.out_dim,
-            "dropout":args.dropout
+            "out_dim":args.out_dim
         },
         "fit":{
             "lr":args.lr,
             "logdir":args.logdir,
             "num_epoch":args.num_epoch,
-            "alpha":args.alpha,
-            "eta":args.eta,
-            "theta":args.theta,
             "device":args.device,
         },
         "predict":{
-            "alpha":args.alpha,
-            "eta":args.eta,
-            "theta":args.theta,
             "device":args.device,
         }
     }
