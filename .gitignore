@@ -35,3 +35,4 @@ method/infoNCECoLA/all_log/
 */.vscode
 DGLD/dataset/
 **__pycache__
+*.csv
