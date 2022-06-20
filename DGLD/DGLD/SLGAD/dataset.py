@@ -1,3 +1,7 @@
+"""
+This is dataset loading and processing program for SL-GAD
+"""
+
 import os
 from os import path as osp
 import torch.nn.functional as F
@@ -21,15 +25,6 @@ from datetime import datetime
 
 # torch.set_default_tensor_type(torch.DoubleTensor)
 
-def normalize_adj(adj):
-    """Symmetrically normalize adjacency matrix."""
-    adj = sp.coo_matrix(adj)
-    rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
-    d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
-    
 def safe_add_self_loop(g):
     """
     Add the self loop in g
@@ -87,6 +82,17 @@ class SL_GAD_DataSet(DGLDataset):
         self.adj_matrix()
 
     def adj_matrix(self):
+        """
+        functions to store adjacency matrix
+        
+        Paramaters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         # print(self.dataset)
         # print(self.dataset.edata['w'])
         # exit()
@@ -145,11 +151,33 @@ class SL_GAD_DataSet(DGLDataset):
 
         # exit()
     def normalize_feat(self):
+        """
+        functions to normalize the features of nodes in graph
+        
+        Paramaters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         # print(self.dataset.ndata['feat'][:5, :5])
         # exit()
         self.dataset.ndata['feat'] = F.normalize(self.dataset.ndata['feat'], p=1, dim=1)
     
     def normalize_adj(self):
+        """
+        functions to normalize the edge weight in graph
+        
+        Paramaters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         self.sample_graph = self.dataset
         norm = EdgeWeightNorm(norm='both')
         # self.dataset = dgl.remove_self_loop(self.dataset)
@@ -182,6 +210,16 @@ class SL_GAD_DataSet(DGLDataset):
         # print(norm_edge_weight)
 
     def random_walk_sampling(self):
+        """
+        functions to get random walk from target nodes
+        Paramaters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         time_0 = datetime.now()
         # print(self.sample_graph)
         # print(torch.sum(self.dataset.edata['w']))
@@ -212,6 +250,19 @@ class SL_GAD_DataSet(DGLDataset):
         pass
 
     def graph_transform(self, g):
+        """
+        functions to transfrom graph
+
+        Paramaters
+        ----------
+        g : DGL.Graph
+            the graph to transform
+
+        Returns
+        -------
+        newg : DGL.Graph
+            the graph after transform
+        """
         newg = g
         # newg = safe_add_self_loop(g)
         # add virtual node as target node.
@@ -223,6 +274,19 @@ class SL_GAD_DataSet(DGLDataset):
         return newg
     
     def construct_graph(self, pace):
+        """
+        Functions that construct the ith subgraph
+
+        Parameters
+        ----------
+        pace : list
+            random walk, the set of node to construct graph
+
+        Returns
+        -------
+        temp_graph : DGL.Graph
+            the subgraph
+        """
         slice_adj = self.adj_matrix[pace, :][:, pace]
         temp_graph = dgl.from_scipy(sp.coo_matrix(slice_adj), eweight_name = 'w')
         temp_graph.ndata['feat'] = self.dataset.ndata['feat'][pace]
@@ -233,6 +297,23 @@ class SL_GAD_DataSet(DGLDataset):
         return temp_graph
 
     def __getitem__(self, i):
+        """
+        Functions that get the ith subgraph set, including two positive subgraphs and one negative subgraph
+
+        Parameters
+        ----------
+        i : int
+            The index of subgraph.
+
+        Returns
+        -------
+        pos_subgraph_1 : dgl.heterograph.DGLHeteroGraph
+            the first positive subgraph of ith subgraph set
+        pos_subgraph_2 : dgl.heterograph.DGLHeteroGraph
+            the second positive subgraph of ith subgraph set
+        neg_subgraph : dgl.heterograph.DGLHeteroGraph
+            the negative subgraph of ith subgraph set
+        """
         # self.paces_1[i] = [0, 633, 1862, 2582]
         # print(self.dataset)
         if False and i < 20:
@@ -277,9 +358,32 @@ class SL_GAD_DataSet(DGLDataset):
         return pos_subgraph_1, pos_subgraph_2, neg_subgraph, i
 
     def __len__(self):
+        """
+        get the number of nodes of graph
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        num : int
+            number of nodes of graph
+        """
         return self.dataset.num_nodes()
 
     def process(self):
+        """
+        nonsense
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
         pass
 
 if __name__ == '__main__':

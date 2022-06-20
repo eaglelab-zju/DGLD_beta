@@ -265,7 +265,7 @@ if __name__ == '__main__':
     start_time = datetime.now()
     print('start_time : ', start_time)
 
-    SLGAD_subgraphsampler = Dataset.SLGAD_SubGraphSampling(length=args.subgraph_size)
+    SLGAD_subgraphsampler = Dataset.COLASubGraphSampling(length=args.subgraph_size)
     model = SL_GAD_Model(
         in_feats=dataset[0][0].ndata["feat"].shape[1],
         out_feats=args.embedding_dim,
