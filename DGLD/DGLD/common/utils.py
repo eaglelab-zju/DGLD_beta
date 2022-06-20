@@ -13,18 +13,60 @@ data_path =current_dir +'/data/'
 print('data_path:',data_path)
 
 def ranknorm(input_arr):
-    r"""
-    input_arr: np.ndarray like object.
+    """
+    return the 1-norm of rankdata of input_arr
+
+    Parameters
+    ----------
+    input_arr: list
+        the data to be ranked
+
+    Returns
+    -------
+    rank : numpy.ndarray
+        the 1-norm of rankdata
     """
     return rankdata(input_arr, method='min') / len(input_arr)
 
 def allclose(a, b, rtol=1e-4, atol=1e-4):
+    """
+    This function checks if a and b satisfy the condition:
+    |a - b| <= atol + rtol * |b|
+
+    Parameters
+    ----------
+    input : Tensor
+        first tensor to compare
+    other : Tensor
+        second tensor to compare
+    atol : float, optional
+        absolute tolerance. Default: 1e-08
+    rtol : float, optional
+        relative tolerance. Default: 1e-05
+
+    Returns
+    -------
+    res : bool
+        True for close, False for not
+    """
     return torch.allclose(a.float().cpu(),
             b.float().cpu(), rtol=rtol, atol=atol)
 
 def move_start_node_fisrt(pace, start_node):
     """
     return a new pace in which the start node is in the first place.
+
+    Parameters
+    ----------
+    pace : list
+        the subgraph of start node
+    start_node: int
+        target node
+
+    Returns
+    -------
+    pace : list
+        subgraph whose first value is start_node
     """
     if pace[0] == start_node:return pace
     for i in range(1, len(pace)):
@@ -35,9 +77,19 @@ def move_start_node_fisrt(pace, start_node):
     return pace
 
 def is_bidirected(g):
-    """Return whether the graph is a bidirected graph.
+    """
+    Return whether the graph is a bidirected graph.
     A graph is bidirected if for any edge :math:`(u, v)` in :math:`G` with weight :math:`w`,
     there exists an edge :math:`(v, u)` in :math:`G` with the same weight.
+
+    Parameters
+    ----------
+    g : DGL.graph
+
+    Returns
+    -------
+    res : bool
+        True for bidirected, False for not
     """
     src, dst = g.edges()
     num_nodes = g.num_nodes()
@@ -56,12 +108,18 @@ def is_bidirected(g):
 
 
 def load_raw_pyg_dataset(data_name='',verbose=True):
-    """Read raw data from pyg and save to mat file.
-        
+    """
+    Read raw data from pyg.
+        If data not in pyg, read from .mat files.
     Parameters
     ----------
     data_name : str, optional
         name of dataset, by default ''
+
+    returns
+    -------
+    data : dgl.graph
+        the graph of dataset
     """
     assert data_name in ['Cora','Citeseer','Pubmed','BlogCatalog','Flickr','ogbn-arxiv'],\
         'datasets do not have this data!!!'
@@ -99,17 +157,20 @@ def load_raw_pyg_dataset(data_name='',verbose=True):
     return data
 
 def load_mat_data2dgl(data_path,verbose=True):
-    """load data from .mat file
+    """
+    load data from .mat file
 
     Parameters
     ----------
+    data_path : str
+        the file to read in
     verbose : bool, optional
         print info, by default True
 
     Returns
     -------
-    list
-        [graph]
+    graph : [DGL.graph]
+        the graph read from data_path
     """
     mat_path =data_path
     data_mat = sio.loadmat(mat_path)
@@ -145,6 +206,18 @@ def load_mat_data2dgl(data_path,verbose=True):
 
 
 def load_ogbn_arxiv():
+    """
+    Read ogbn-arxiv from dgl.
+
+    Parameters
+    ----------
+    None
+
+    returns
+    -------
+    graph : [dgl.graph]
+        the graph of ogbn-arxiv
+    """
     print('ogbn-arxiv datapath:',current_dir+'/data/')
     data = DglNodePropPredDataset(name="ogbn-arxiv",root=current_dir+'/data/')
     graph, _ = data[0]
@@ -159,14 +232,18 @@ def load_ogbn_arxiv():
     return [graph]
 
 def load_BlogCatalog():
-    """load BlogCatalog dgl graph
+    """
+    load BlogCatalog dgl graph
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
-    list
-        [graph]
-    
-    Using
+    graph : [DGL.graph]
+
+    Examples
     -------
     >>> graph=load_BlogCatalog()[0]
     """
@@ -175,16 +252,20 @@ def load_BlogCatalog():
 
 
 def load_Flickr():
-    """load Flickr dgl graph
+    """
+    load Flickr dgl graph
+
+    Parameters
+    ----------
+    None
 
     Returns
     -------
-    list
-        [graph]
+    graph : [DGL.graph]
 
-    Using
+    Examples
     -------
-    >>> graph=load_Flickr()[0]
+    >>> graph=load_BlogCatalog()[0]
     """
     return load_mat_data2dgl(data_path=data_path+'Flickr.mat')
 
@@ -192,14 +273,17 @@ def load_Flickr():
 def load_ACM():
     """load ACM dgl graph
 
+    Parameters
+    ----------
+    None
+
     Returns
     -------
-    list
-        [graph]
-    
-    Using
+    graph : [DGL.graph]
+
+    Examples
     -------
-    >>> graph=load_ACM()[0]
+    >>> graph=load_BlogCatalog()[0]
     """
     return load_mat_data2dgl(data_path=data_path+'ACM.mat')
 

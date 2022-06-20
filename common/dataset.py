@@ -1,3 +1,7 @@
+"""
+This is a program about loading data.
+"""
+
 import dgl
 import torch
 import numpy as np
@@ -21,17 +25,21 @@ from common.utils import is_bidirected, load_ogbn_arxiv, load_BlogCatalog, load_
 # TODO: add all datasets above.
 
 def split_auc(groundtruth, prob,data_name='not_custom'):
-    r"""
-    print the scoring(AUC) of the two types of anomalies separately.
-    Parameter:
+    """
+    print the scoring(AUC) of the two types of anomalies separately and global auc.
+
+    Parameters
     ----------
-    groundtruth: np.ndarray, Indicates whether this node is an injected anomaly node.
+    groundtruth: np.ndarray
+        Indicates whether this node is an injected anomaly node.
             0: normal node
             1: structural anomaly
             2: contextual anomaly
 
-    prob: np.ndarray-like array saving the predicted score for every node
-    Return:
+    prob: np.ndarray-like array
+        saving the predicted score for every node
+    
+    Returns
     -------
     None
     """
@@ -63,34 +71,37 @@ def split_auc(groundtruth, prob,data_name='not_custom'):
 
 
 class GraphNodeAnomalyDectionDataset(DGLDataset):
-    r"""
+    """
+    This is a class to get graph and inject anomaly
     follow [CoLA](https://arxiv.org/abs/2103.00113)，inject Anomaly to the oral graph
     We fix p = 15
     and set q to 10, 15, 20, 5, 5, 20, 200 for
     BlogCatalog, Flickr, ACM, Cora, Citeseer, Pubmed and ogbn-arxiv, respectively.
+
+    Parameters
+    ----------
+    name : str
+        when name == 'custom', using custom data and please Specify custom data by g_data.
+        and Specify label by y_data. [BlogCatalog, Flickr, Cora, Citeseer, Pubmed and ogbn-arxiv] is supported default follow CoLA.
+    p : int
+        anomaly injection hyperparameter follow CoLA, for structural anomaly
+    k : int
+        anomaly injection hyperparameter follow CoLA, for contextual anomaly
+    cola_preprocess_features : bool 
+        follow the same preprocess as CoLA, default by True
+    g_data : DGL.Graph
+        Specify custom data by g_data.
+    y_data : Torch.Tensor
+        Specify custom label by g_data.
+    
+    Examples
+    -------
+    >>> import GraphNodeAnomalyDectionDataset
+    >>> dataset = GraphNodeAnomalyDectionDataset('Cora', p = 15, k = 50)
+    >>> print(dataset[0])
     """
 
     def __init__(self, name="Cora", p=15, k=50, cola_preprocess_features=True, g_data=None, y_data=None):
-        r"""
-        Parameter
-        ---------
-        name:
-        when name == 'custom', using custom data and please Specify custom data by g_data.
-        and Specify label by y_data. [BlogCatalog, Flickr, Cora, Citeseer, Pubmed and ogbn-arxiv] is supported default follow CoLA.
-        
-        p and k :
-        and anomaly injection hyperparameter follow CoLA
-
-        cola_preprocess_features: 
-        follow the same preprocess as CoLA, default:True
-
-        g_data:
-        Specify custom data by g_data.
-
-        y_data:
-        Specify custom label by g_data.
-
-        """
         super().__init__(name=name)
         self.dataset_name = name
         self.cola_preprocess_features = cola_preprocess_features
@@ -125,6 +136,9 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             self.dataset = g_data
         if self.dataset_name != 'custom':
             assert is_bidirected(self.dataset) == True
+        self.oridataset = self.dataset
+        self.oridataset.ndata['Raw_Feat'] = self.oridataset.ndata['feat'].float()
+        self.dataset.ndata['Raw_Feat'] = self.dataset.ndata['feat'].float()
         self.init_anomaly_label(label=y_data)
 
         if self.dataset_name != 'custom' and y_data == None:
@@ -137,53 +151,182 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             self.dataset.ndata['feat'] = self.preprocess_features(self.dataset.ndata['feat'])
     @property
     def num_anomaly(self):
-        r"""
-        anomaly_label: Indicates whether this node is an injected anomaly node.
-            0: normal node
-            1: structural anomaly
-            2: contextual anomaly
+        """
+        Functions that return the number of anomaly node
+
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : int
+            number of anomaly node
         """
         return sum(self.dataset.ndata["anomaly_label"] != 0)
 
     @property
     def num_nodes(self):
+        """
+        Functions that return the number of node
+        
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : int
+            number of node
+        """
         return self.dataset.num_nodes()
 
     @property
     def anomaly_label(self):
+        """
+        Functions that return the anomaly label of node
+            0: normal node
+            1: structural anomaly
+            2: contextual anomaly
+
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : torch.Tensor
+            anomaly label of node
+        """
         return self.dataset.ndata["anomaly_label"]
 
     @property
     def anomalies_idx(self):
+        """
+        Functions that return the index of anomaly node
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : torch.Tensor
+            index of anomaly node
+        """
         anomalies = torch.where(self.anomaly_label != 0)[0].numpy()
         return anomalies
 
     @property
     def structural_anomalies_idx(self):
+        """
+        Functions that return the index of structural anomaly node
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : torch.Tensor
+            index of structural anomaly node
+        """
         anomalies = torch.where(self.anomaly_label == 1)[0].numpy()
         return anomalies
 
     @property
     def contextual_anomalies_idx(self):
+        """
+        Functions that return the index of contextual anomaly node
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : torch.Tensor
+            index of contextual anomaly node
+        """
         anomalies = torch.where(self.anomaly_label == 2)[0].numpy()
         return anomalies
 
     @property
     def normal_idx(self):
+        """
+        Functions that return the index of normal node
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : torch.Tensor
+            index of normal node
+        """
         nodes = torch.where(self.anomaly_label == 0)[0].numpy()
         return nodes
 
     @property
     def node_attr(self):
+        """
+        Functions that return the attribute of node
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        out : torch.Tensor
+            attribute of node
+        """
         return self.dataset.ndata["feat"]
 
     def set_node_attr(self, attr):
+        """
+        Functions that set the attribute of node
+            
+        Parameters
+        ----------
+        attr : torch.Tensor
+            attribute assigned to node in 'feat'
+        
+        Returns
+        -------
+        None
+        """
         self.dataset.ndata["feat"] = attr
 
     def set_anomaly_label(self, label):
+        """
+        Functions that set the anomaly label of node
+            
+        Parameters
+        ----------
+        attr : torch.Tensor
+            anomaly label assigned to node in 'anomaly_label'
+        
+        Returns
+        -------
+        None
+        """
         self.dataset.ndata["anomaly_label"] = label
 
     def init_anomaly_label(self, label=None):
+        """
+        Functions that initialize the anomaly label of node
+            
+        Parameters
+        ----------
+        label : torch.Tensor
+            initial anomaly label of node in 'anomaly_label' (default None)
+        
+        Returns
+        -------
+        None
+        """
         number_node = self.dataset.num_nodes()
         if label != None:
             self.dataset.ndata["anomaly_label"] = label# torch.zeros(number_node)
@@ -191,12 +334,45 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
             self.dataset.ndata["anomaly_label"] = torch.zeros(number_node)
 
     def reset_anomaly_label(self):
+        """
+        Functions that reset the anomaly label of node
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         self.init_anomaly_label()
 
     def process(self):
+        """
+        Undone, Useless
+
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         pass
 
     def inject_structural_anomalies(self):
+        """
+        Functions that inject structural anomaly
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         np.random.seed(self.seed)
         src, dst = self.dataset.edges()
         labels = self.anomaly_label
@@ -243,6 +419,17 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         print("anomalies numbers:", len(self.anomalies_idx))
 
     def inject_contextual_anomalies(self):
+        """
+        Functions that inject contextual anomaly
+            
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None
+        """
         np.random.seed(self.seed)
         k = self.k
         attribute_anomalies_number = self.p * self.q
@@ -275,8 +462,17 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         print("anomalies numbers:", len(self.anomalies_idx))
 
     def preprocess_features(self, features):
-        r"""Row-normalize feature matrix and convert to tuple representation
-        copy from [CoLA]()
+        """
+        Functions that process features, here norm in row
+        
+        Parameters
+        ----------
+        features : torch.Tensor
+            features to be processed
+        
+        Returns
+        -------
+        None
         """
         rowsum = np.array(features.sum(1))
         r_inv = np.power(rowsum, -1).flatten()
@@ -286,26 +482,36 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
         return torch.Tensor(features).float()
 
     def evalution(self, prediction):
-        r"""
-        print the scoring(AUC) of the two types of anomalies separately.
-        Parameter:
+        """
+        Functions that evaluate prediction for separate anomaly and global, auc as metrics
+            
+        Parameters
         ----------
-        prediction: np.ndarray-like array save the predicted score for every node
-        Return:
+        prediction : torch.Tensor
+            prediction to be evaluated
+        
+        Returns
         -------
-        None
+        final_score : numpy.float64
+        a_score : numpy.float64
+        s_score : numpy.float64
         """
         return split_auc(self.anomaly_label, prediction,self.dataset_name)
 
     def evaluation_multiround(self, predict_score_arr):
         '''
-        Description
-        -----------
-        mulit-round result(as CoLA) evaluation.
+        Functions that evaluates mulit-round result(as CoLA)
 
-        Parameter
-        ---------
-        predict_score_arr: node * num_round
+        Parameters
+        ----------
+        predict_score_arr : torch.Tensor
+            prediction to be evaluated
+        
+        Returns
+        -------
+        final_score : numpy.float64
+        a_score : numpy.float64
+        s_score : numpy.float64
         '''
         mean_predict_result = predict_score_arr.mean(1)
         std_predict_result = predict_score_arr.std(1)
@@ -341,6 +547,17 @@ class GraphNodeAnomalyDectionDataset(DGLDataset):
 
 
 def test_cutom_dataset():
+    """
+    Functions that test custom dataset loading well
+        
+    Parameters
+    ----------
+    None
+    
+    Returns
+    -------
+    None
+    """
     my_g = dgl.data.CoraGraphDataset()[0]
     label = torch.ones(my_g.num_nodes())
     dataset = GraphNodeAnomalyDectionDataset('custom', g_data=my_g, y_data=label)
