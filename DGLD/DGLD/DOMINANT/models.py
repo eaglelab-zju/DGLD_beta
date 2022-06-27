@@ -1,3 +1,6 @@
+"""
+Deep Anomaly Detection on Attributed Networks.[SDM19]
+"""
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -8,6 +11,17 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 
 class Encoder(nn.Module):
+    """Encoder of DominantModel
+
+    Parameters
+    ----------
+    nfeat : int
+        dimension of feature 
+    nhid : int
+        dimension of hidden embedding
+    dropout : float
+        Dropout rate
+    """
     def __init__(self, nfeat, nhid, dropout):
         super(Encoder, self).__init__()
 
@@ -16,6 +30,20 @@ class Encoder(nn.Module):
         self.dropout = dropout
 
     def forward(self, g, h):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        h : torch.Tensor
+            features of nodes
+
+        Returns
+        -------
+        x : torch.Tensor
+            embedding of nodes
+        """
         x = F.relu(self.gc1(g, h))
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.relu(self.gc2(g, x))
@@ -23,6 +51,17 @@ class Encoder(nn.Module):
         return x
 
 class Attribute_Decoder(nn.Module):
+    """Attribute Decoder of DominantModel
+
+    Parameters
+    ----------
+    nfeat : int
+        dimension of feature 
+    nhid : int
+        dimension of hidden embedding
+    dropout : float
+        Dropout rate
+    """
     def __init__(self, nfeat, nhid, dropout):
         super(Attribute_Decoder, self).__init__()
         self.gc1 = GraphConv(nhid, nhid,norm="none")
@@ -30,19 +69,55 @@ class Attribute_Decoder(nn.Module):
         self.dropout = dropout
 
     def forward(self, g, h):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        h : torch.Tensor
+            features of nodes
+
+        Returns
+        -------
+        x : torch.Tensor
+            Reconstructed attribute matrix
+        """
         x = F.relu(self.gc1(g, h))
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.relu(self.gc2(g, x))
         return x
 
 class Structure_Decoder(nn.Module):
+    """Structure Decoder of DominantModel
+
+    Parameters
+    ----------
+    nhid : int
+        dimension of hidden embedding
+    dropout : float
+        Dropout rate
+    """
     def __init__(self, nhid, dropout):
         super(Structure_Decoder, self).__init__()
-
         self.gc1 = GraphConv(nhid, nhid,norm="none")
         self.dropout = dropout
 
     def forward(self, g, h):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        h : torch.Tensor
+            features of nodes
+
+        Returns
+        -------
+        x : torch.Tensor
+            Reconstructed adj matrix
+        """
         x = F.relu(self.gc1(g, h))
         x = F.dropout(x, self.dropout, training=self.training)
         x = x @ x.T
@@ -51,6 +126,17 @@ class Structure_Decoder(nn.Module):
 
 
 class DominantModel(nn.Module):
+    """Deep Anomaly Detection on Attributed Networks.[SDM19]
+
+    Parameters
+    ----------
+    feat_size : int
+        dimension of feature 
+    hidden_size : int
+        dimension of hidden embedding (default: 64)
+    dropout : float
+        Dropout rate
+    """
     def __init__(self, feat_size, hidden_size, dropout):
         super(DominantModel, self).__init__()
         self.shared_encoder = Encoder(feat_size, hidden_size, dropout)
@@ -58,6 +144,22 @@ class DominantModel(nn.Module):
         self.struct_decoder = Structure_Decoder(hidden_size, dropout)
 
     def forward(self, g, h):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        h : torch.Tensor
+            features of nodes
+
+        Returns
+        -------
+        struct_reconstructed : torch.Tensor
+            Reconstructed adj matrix
+        x_hat : torch.Tensor
+            Reconstructed attribute matrix
+        """
         # encode
         x = self.shared_encoder(g, h)
         # decode feature matrix

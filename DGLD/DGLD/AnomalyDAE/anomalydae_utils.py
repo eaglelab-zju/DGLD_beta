@@ -12,7 +12,6 @@ import torch
 import random
 
 
-
 def get_parse():
     parser = argparse.ArgumentParser(
         description='AnomalyDAE: Dual autoencoder for anomaly detection on attributed networks')
@@ -48,14 +47,7 @@ def get_parse():
         shutil.rmtree(args.logdir)
 
     if args.lr is None:
-        if args.dataset in ['Cora', 'Citeseer', 'Pubmed', 'Flickr']:
-            args.lr = 1e-3
-        elif args.dataset == 'ACM':
-            args.lr = 5e-4
-        elif args.dataset == 'BlogCatalog':
-            args.lr = 3e-3
-        elif args.dataset == 'ogbn-arxiv':
-            args.lr = 1e-3
+        args.lr = 1e-3
 
     if args.num_epoch is None:
         if args.dataset in ['Cora', 'Citeseer', 'Pubmed']:
@@ -65,7 +57,25 @@ def get_parse():
         else:
             args.num_epoch = 10
 
+    if args.dataset == 'BlogCatalog':
+        args.num_epoch = 100
+        args.alpha = 0.7
+        args.eta = 5.0
+        args.theta = 40.0
     
+    elif args.dataset == 'Flickr':
+        args.num_epoch = 100
+        args.alpha = 0.9
+        args.eta = 8.0
+        args.theta = 90.0
+
+    elif args.dataset == 'ACM':
+        args.num_epoch = 80
+        args.alpha = 0.7
+        args.eta = 3.0
+        args.theta = 10.0
+
+
 
     in_feature_map = {
         "Cora":1433,

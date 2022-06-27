@@ -4,6 +4,7 @@ method/CoLA/dataset/*
 t.py
 *.png
 *.pyc
+*.log
 .vscode/settings.json
 EDA.ipynb
 method/CoLA/log/
@@ -35,3 +36,4 @@ method/infoNCECoLA/all_log/
 */.vscode
 DGLD/dataset/
 **__pycache__
+*.csv

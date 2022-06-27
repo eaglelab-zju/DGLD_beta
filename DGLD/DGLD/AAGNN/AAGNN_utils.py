@@ -76,14 +76,14 @@ def get_parse():
         else:
             args.num_epoch = 10
 
-    random_seed(args.seed)
+    # random_seed(args.seed)
 
     in_feature_map = {
         "Cora":1433,
         "Citeseer":3703,
         "Pubmed":500,
         "BlogCatalog":8189,
-        "Flickr":12407,
+        "Flickr":12047,
         "ACM":8337,
         "ogbn-arxiv":128,
     }
@@ -98,6 +98,7 @@ def get_parse():
     }
     final_args_dict = {
         "dataset": args.dataset,
+        "seed":args.seed,
         "model":{
             "feat_size":in_feature_map[args.dataset],
             "out_dim":args.out_dim

@@ -1,0 +1,10 @@
+nohup: ignoring input
+log dir exist
+Cora_ComGA1
+Citeseer_ComGA1
+Pubmed_ComGA1
+benchmark_comga1.sh: line 9:  2144 Terminated              CUDA_VISIBLE_DEVICES=4 python main_comga1.py --dataset $dataset --device 0 --seed $seed --logdir log/$expname > log/$expname.log 2>&1
+ogbn-arxiv_ComGA1
+ACM_ComGA1
+Flickr_ComGA1
+BlogCatalog_ComGA1
