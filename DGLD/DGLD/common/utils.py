@@ -6,11 +6,11 @@ import scipy.io as sio
 import numpy as np
 import scipy.sparse as sp
 from ogb.nodeproppred import DglNodePropPredDataset
-import os
+import os,wget,ssl,sys
 current_file_name = __file__
 current_dir=os.path.dirname(os.path.dirname(os.path.abspath(current_file_name)))
 data_path =current_dir +'/data/'
-print('data_path:',data_path)
+# print('data_path:',data_path)
 
 def ranknorm(input_arr):
     """
@@ -185,6 +185,7 @@ def load_mat_data2dgl(data_path,verbose=True):
     num_classes=len(np.unique(truth))
 
     if verbose:
+        print()
         print('  DGL dataset')
         print('  NumNodes: {}'.format(graph.number_of_nodes()))
         print('  NumEdges: {}'.format(graph.number_of_edges()))
@@ -205,21 +206,22 @@ def load_mat_data2dgl(data_path,verbose=True):
     return [graph]
 
 
-def load_ogbn_arxiv():
+
+def load_ogbn_arxiv(raw_dir=data_path):
     """
     Read ogbn-arxiv from dgl.
 
     Parameters
     ----------
-    None
+    raw_dir : str
+        Data path. Supports user customization.  
 
     returns
     -------
     graph : [dgl.graph]
         the graph of ogbn-arxiv
     """
-    print('ogbn-arxiv datapath:',current_dir+'/data/')
-    data = DglNodePropPredDataset(name="ogbn-arxiv",root=current_dir+'/data/')
+    data = DglNodePropPredDataset(name="ogbn-arxiv",root=raw_dir)
     graph, _ = data[0]
     # add reverse edges
     srcs, dsts = graph.all_edges()
@@ -231,13 +233,22 @@ def load_ogbn_arxiv():
     assert is_bidirected(graph) == True
     return [graph]
 
-def load_BlogCatalog():
+
+#create this bar_progress method which is invoked automatically from wget
+def bar_progress(current, total, width=80):
+  progress_message = "Downloading: %d%% [%d / %d] bytes" % (current / total * 100, current, total)
+  # Don't use print() as it will print in new line every time.
+  sys.stdout.write("\r" + progress_message)
+  sys.stdout.flush()
+
+def load_BlogCatalog(raw_dir=data_path):
     """
     load BlogCatalog dgl graph
 
     Parameters
     ----------
-    None
+    raw_dir : str
+        Data path. Supports user customization.  
 
     Returns
     -------
@@ -247,17 +258,22 @@ def load_BlogCatalog():
     -------
     >>> graph=load_BlogCatalog()[0]
     """
-    return load_mat_data2dgl(data_path=data_path+'BlogCatalog.mat')
+    ssl._create_default_https_context = ssl._create_unverified_context
+    data_file = os.path.join(raw_dir,'BlogCatalog.mat')
+    if not os.path.exists(data_file):
+        url = 'https://github.com/GRAND-Lab/CoLA/blob/main/raw_dataset/BlogCatalog/BlogCatalog.mat?raw=true'
+        wget.download(url,out=data_file,bar=bar_progress)
 
+    return load_mat_data2dgl(data_path=data_file)
 
-
-def load_Flickr():
+def load_Flickr(raw_dir=data_path):
     """
     load Flickr dgl graph
 
     Parameters
     ----------
-    None
+    raw_dir : str
+        Data path. Supports user customization.  
 
     Returns
     -------
@@ -265,17 +281,24 @@ def load_Flickr():
 
     Examples
     -------
-    >>> graph=load_BlogCatalog()[0]
+    >>> graph=load_Flickr()[0]
     """
-    return load_mat_data2dgl(data_path=data_path+'Flickr.mat')
+    ssl._create_default_https_context = ssl._create_unverified_context
+    data_file = os.path.join(raw_dir,'Flickr.mat')
+    if not os.path.exists(data_file):
+        url = 'https://github.com/GRAND-Lab/CoLA/blob/main/raw_dataset/Flickr/Flickr.mat?raw=true'
+        wget.download(url,out=data_file,bar=bar_progress)
+
+    return load_mat_data2dgl(data_path=data_file)
 
 
-def load_ACM():
+def load_ACM(raw_dir=data_path):
     """load ACM dgl graph
 
     Parameters
     ----------
-    None
+    raw_dir : str
+        Data path. Supports user customization.  
 
     Returns
     -------
@@ -283,11 +306,15 @@ def load_ACM():
 
     Examples
     -------
-    >>> graph=load_BlogCatalog()[0]
+    >>> graph=load_ACM()[0]
     """
-    return load_mat_data2dgl(data_path=data_path+'ACM.mat')
+    ssl._create_default_https_context = ssl._create_unverified_context
+    data_file = os.path.join(raw_dir,'ACM.mat')
+    if not os.path.exists(data_file):
+        url = 'https://github.com/GRAND-Lab/CoLA/blob/main/dataset/ACM.mat?raw=true'
+        wget.download(url,out=data_file,bar=bar_progress)
 
-
+    return load_mat_data2dgl(data_path=data_file)
 
 r"""
 cd CoLA
