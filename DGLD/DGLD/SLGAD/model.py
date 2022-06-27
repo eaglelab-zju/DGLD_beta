@@ -210,13 +210,18 @@ class OneLayerGCNWithGlobalAdg(nn.Module):
         self.conv.set_allow_zero_in_degree(1)
         # print(args)
         # print(args.act_function)
-        if args.act_function == "PReLU":
+        if args == None or args.act_function == "PReLU":
             self.act = nn.PReLU()
         elif args.act_function == "ReLU":
             self.act = nn.ReLU()
         # self.reset_parameters()
         self.pool = AvgPooling()
-        self.attention = args.attention
+        if args == None:
+            pass
+            self.attention = None
+        else:
+            pass
+            self.attention = args.attention
         # print(self.weight.weight)
         # exit()
         
@@ -363,7 +368,7 @@ class OneLayerGCN(nn.Module):
         super(OneLayerGCN, self).__init__()
         self.conv = GraphConv(in_feats, out_feats, bias=bias)
         self.global_adg = args.global_adg
-        if args.act_function == "PReLU":
+        if args == None or args.act_function == "PReLU":
             self.act = nn.PReLU()
         elif args.act_function == "ReLU":
             self.act = nn.ReLU()
@@ -379,6 +384,7 @@ class OneLayerGCN(nn.Module):
             the list of subgraph, to compute forward and loss
         in_feat : Torch.tensor
             the node feature of geive subgraph
+
         Returns
         -------
         h : Torch.tensor
@@ -442,10 +448,17 @@ class SL_GAD_Model(nn.Module):
         self.discriminator_1 = Discriminator(out_feats)
         self.discriminator_2 = Discriminator(out_feats)
         self.args = args
-        self.alpha = args.alpha
-        self.beta = args.beta
-        self.device = 'cuda:' + str(args.device)
-        self.b_xent = nn.BCEWithLogitsLoss(reduction='none', pos_weight=torch.tensor([1]).to('cuda:' + str(args.device)))
+        if args == None:
+            self.alpha = 0.6
+            self.beta = 0.4
+        else:
+            self.alpha = args.alpha
+            self.beta = args.beta
+        if args == None:
+            self.device = 'cuda:' + '1'
+        else:
+            self.device = 'cuda:' + str(args.device)
+        self.b_xent = nn.BCEWithLogitsLoss(reduction='none', pos_weight=torch.tensor([1]).to(self.device))
         # print('cuda:' + str(args.device))
         print('alpha : ', self.alpha)
         print('beta : ', self.beta)
@@ -643,7 +656,11 @@ class SL_GAD_Model(nn.Module):
         
         lbl = torch.unsqueeze(torch.cat((torch.ones(anchor_embs.shape[0]),
                                                  torch.zeros(anchor_embs.shape[0]))), dim = 1).to(self.device)
-        loss_all = self.b_xent(score_tot, lbl)
+        # print(self.b_xent.device)
+        # print(score_tot.to(self.device).device)
+        # print(lbl.to(self.device).device)
+        b_xent = nn.BCEWithLogitsLoss(reduction='none', pos_weight=torch.tensor([1]).to(self.device))
+        loss_all = b_xent(score_tot.to(self.device), lbl.to(self.device))
         # print(loss_all[:10])
         loss_all = torch.mean(loss_all)
         # print(loss_all)
@@ -912,6 +929,156 @@ class SL_GAD_Model(nn.Module):
         # Time_Process.global_time.process_Time("net done")
         return L, single_predict_scores
 
+from .dataset import SL_GAD_DataSet
+from .SL_GAD_utils import train_epoch, test_epoch
+from dgl.dataloading import GraphDataLoader
+import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
+
+class SL_GAD():    
+    def __init__(self, in_feats=1433, out_feats=64, global_adg=True, alpha = 1.0, beta = 0.6, args = None):
+        """
+        Generative and Contrastive Self-Supervised Learning for Graph Anomaly Detection
+        Yu IEEE Transactions on Knowledge and Data Engineering 2021
+
+        Parameters
+        ----------
+        in_feats : Torch.tensor, optional
+            the feature dimensions of input data, default 1433
+        out_feats : Torch.tensor, optional
+            the feature dimensions of output data, default 64
+        global_adg : bool, optional
+            whether use the global information of node, here means the degree matrix, default True
+        alpha : double, optional
+            the coefficient of contrastive loss and score, default 1.0
+        beta : double, optional
+            the coefficient of generateive loss and score, default 0.6
+        args : parser, optional
+            extra custom made of model, default None
+
+        Examples:
+        ---------
+        ```python
+        >>> from DGLD.common.dataset import GraphNodeAnomalyDectionDataset
+        >>> from DGLD.CoLA import CoLA
+        >>> if __name__ == '__main__':
+        >>>     # sklearn-like API for most users.
+        >>>     gnd_dataset = GraphNodeAnomalyDectionDataset("Cora")
+        >>>     g = gnd_dataset[0]
+        >>>     label = gnd_dataset.anomaly_label
+        >>>     model = SL_GAD(in_feats=1433)
+        >>>     model.fit(g, num_epoch=1, device='cpu')
+        >>>     result = model.predict(g, auc_test_rounds=2)
+        >>>     print(split_auc(label, result))
+        ```
+        """        
+        self.args = args
+        self.model = SL_GAD_Model(in_feats, out_feats, global_adg, args = args)
+        self.criterion = torch.nn.BCEWithLogitsLoss()
+
+    def fit(self, g, device='cpu', batch_size=300, lr=0.003, weight_decay=1e-5, num_workers=4, num_epoch=100, logdir='tmp', seed=42):
+        """
+        Parameters
+        ----------
+        g : DGL.Graph
+            input graph with feature named "feat" in g.ndata
+        device : str, optional
+            device, default 'cpu'
+        batch_size : int, optional
+            batch size for training, default 300
+        lr : float, optional
+            learning rate for training, default 0.003
+        weight_decay : float, optional
+            weight decay for training, default 1e-5
+        num_workers : int, optional
+            num_workers using in `pytorch DataLoader`, default 4
+        num_epoch : int, optional
+            number of epoch for training, default 100
+        logdir : str, optional
+            tensorboard logdir, default 'tmp'
+        seed : int, optional
+            random seed, default 42
+            
+        Returns
+        -------
+        self : mpdel
+            return the model.
+        """        
+        dataset = SL_GAD_DataSet(base_dataset_name = 'custom', g_data = g)
+        print(dataset.dataset)
+        # exit()
+        train_loader = GraphDataLoader(
+            dataset,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            drop_last=False,
+            shuffle=True,
+        )
+
+        if torch.cuda.is_available() and device != 'cpu':
+            device = torch.device("cuda:" + str(device))
+        else:
+            device = torch.device("cpu")
+        self.model.to(device)
+
+        optimizer = optim.Adam(
+            self.model.parameters(), lr=lr, weight_decay=weight_decay
+        )
+        writer = SummaryWriter(log_dir=logdir)
+
+        for epoch in range(num_epoch):
+            train_loader.dataset.random_walk_sampling()
+            loss_accum = train_epoch(
+                epoch = epoch, loader = train_loader, net = self.model, device = device, criterion = self.criterion, optimizer = optimizer, args = self.args
+            )
+            writer.add_scalar("loss", float(loss_accum), epoch)
+        return self
+
+    def predict(self, g, device='cpu', batch_size=300, num_workers=4, auc_test_rounds=256, logdir='tmp'):
+        """
+        Parameters
+        ----------
+        g : DGL.Graph
+            input graph with feature named "feat" in g.ndata.
+        device : str, optional
+            device, default 'cpu'
+        batch_size : int, optional
+            batch size for predicting, default 300
+        num_workers : int, optional
+            num_workers using in pytorch DataLoader, default 4
+        auc_test_rounds : int, optional
+            number of epoch for predciting, default 256
+        logdir : str, optional
+            tensorboard logdir, default 'tmp'
+        Returns
+        -------
+        predict_score_arr : Torch.tensor
+            the anomaly score of anchor nodes
+        """
+
+        dataset = SL_GAD_DataSet(base_dataset_name = 'custom', g_data = g)
+        test_loader = GraphDataLoader(
+            dataset,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            drop_last=False,
+            shuffle=False,
+        )
+        if torch.cuda.is_available() and device != 'cpu':
+            device = torch.device("cuda:" + str(device))
+        else:
+            device = torch.device("cpu")
+        self.model.to(device)
+
+        predict_score_arr = []
+        for rnd in range(auc_test_rounds):
+            test_loader.dataset.random_walk_sampling()
+            predict_score = test_epoch(
+                epoch = rnd, loader = test_loader, net = self.model, device = device, criterion = self.criterion, args = self.args, optimizer = None
+            )
+            predict_score_arr.append(list(predict_score))
+        predict_score_arr = np.array(predict_score_arr).T
+        return predict_score_arr.mean(1)
 
 
 

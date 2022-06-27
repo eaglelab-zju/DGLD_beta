@@ -1,18 +1,26 @@
+"""
+This is a program about evaluating scores.
+"""
+
 from sklearn.metrics import roc_auc_score
 import numpy as np
 
 def split_auc(groundtruth, prob):
-    r"""
-    print the scoring(AUC) of the two types of anomalies separately.
-    Parameter:
+    """
+    print the scoring(AUC) of the two types of anomalies separately and global auc.
+
+    Parameters
     ----------
-    groundtruth: np.ndarray, Indicates whether this node is an injected anomaly node.
+    groundtruth: np.ndarray
+        Indicates whether this node is an injected anomaly node.
             0: normal node
             1: structural anomaly
             2: contextual anomaly
 
-    prob: np.ndarray-like array saving the predicted score for every node
-    Return:
+    prob: np.ndarray-like array
+        saving the predicted score for every node
+    
+    Returns
     -------
     None
     """

@@ -5,7 +5,7 @@ from numpy import dtype
 import scipy.io as sio
 import scipy.sparse as sp
 from sklearn.covariance import graphical_lasso
-from dataset import GraphNodeAnomalyDectionDataset, split_auc
+from dataset import GraphNodeAnomalyDectionDataset
 from torch_geometric.utils import to_dense_adj,to_scipy_sparse_matrix
 from torch_geometric.data import Data
 import os
@@ -20,14 +20,19 @@ data_path = os.path.dirname(os.path.dirname(os.path.abspath(current_file_name)))
 
 
 def gen_and_save_pygod_dataset(data_name=''):
-    """injecting anomaly nodes to pyg datasets and save to mat file.
+    """
+    injecting anomaly nodes to pyg datasets and save to mat file.
     The return datasets distinguish between two kinds of 
     anomaly nodes by structural anomaly==1,attribute anomaly==2.
 
-    Parameters
-    ----------
+    Parameters:
+    -----------
     data_name : str, optional
         name of dataset, by default ''
+    
+    Return:
+    -------
+    None
     """
     pyg_data=load_raw_pyg_dataset(data_name)
     print('pyg_data:',pyg_data)
@@ -66,14 +71,19 @@ def gen_and_save_pygod_dataset(data_name=''):
     
 
 def gen_and_save_dgld_dataset(data_name=''):
-    """Injecting anomaly nodes to dgl datasets and save to mat file.
+    """
+    Injecting anomaly nodes to dgl datasets and save to mat file.
     The return datasets distinguish between two kinds of 
     anomaly nodes by structural anomaly==1,attribute anomaly==2.
-    
-    Parameters
-    ----------
+
+    Parameters:
+    -----------
     data_name : str, optional
         name of dataset, by default ''
+    
+    Return:
+    -------
+    None
     """
     graph = GraphNodeAnomalyDectionDataset(data_name)[0]
     print(graph)
