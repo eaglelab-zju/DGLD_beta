@@ -37,3 +37,5 @@ method/infoNCECoLA/all_log/
 DGLD/dataset/
 **__pycache__
 *.csv
+DGLD/DGLD/common/data/
+DGLD/DGLD/data/
