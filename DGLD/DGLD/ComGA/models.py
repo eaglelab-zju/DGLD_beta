@@ -188,8 +188,6 @@ class ComGA(nn.Module):
 
 class ComGAModel(nn.Module):
     """
-    Description
-    -----------
     ComGA is an anomaly detector consisting of a Community Detection Module,
     a tGCN Module and an Anomaly Detection Module
 
@@ -223,6 +221,30 @@ class ComGAModel(nn.Module):
         
 
     def forward(self,g,x,B):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        x : torch.Tensor
+            features of nodes
+        B : torch.Tensor
+            Modularity Matrix
+
+        Returns
+        -------
+        A_hat : torch.Tensor
+            Reconstructed adj matrix
+        X_hat : torch.Tensor
+            Reconstructed attribute matrix
+        B_hat : torch.Tensor
+            Reconstructed Modularity Matrix
+        z : torch.Tensor
+            the node latent representation of tgcnEnc
+        z_a : torch.Tensor
+            the node latent representation of CommunityAE
+        """
         B_enc1,B_enc2,z_a,B_hat = self.commAE(B)
         z = self.tgcnEnc(g,x,B_enc1,B_enc2,z_a)
         X_hat = self.attrDec(g,z)
@@ -236,8 +258,10 @@ def init_weights(module: nn.Module) -> None:
         for module in self.modules():
             init_weights(module)
     ```
-    Args:
-        module (nn.Module)
+    Parameters
+    ----------
+    module : nn.Module
+
     """
     if isinstance(module, nn.Linear):
         # TODO: different initialization
@@ -251,8 +275,6 @@ def init_weights(module: nn.Module) -> None:
 
 class CommunityAE(nn.Module):
     """
-    Description
-    -----------
     Community Detection Module:
         The modularity matrix B is reconstructed by autoencode to obtain a representation 
         of each node with community information.
@@ -270,12 +292,6 @@ class CommunityAE(nn.Module):
     dropout : float
         Dropout rate
 
-    Returns
-    -------
-    x : torch.Tensor
-        Reconstructed attribute (feature) of nodes.
-    embed_x : torch.Tensor
-              Embedd nodes after the attention layer
     """
 
     def __init__(self,
@@ -297,6 +313,24 @@ class CommunityAE(nn.Module):
             init_weights(module)
 
     def forward(self,B):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        B : torch.Tensor
+            Modularity Matrix
+
+        Returns
+        -------
+        hidden1 : torch.Tensor
+            the node latent representation of encoder1
+        hidden2 : torch.Tensor
+            the node latent representation of encoder2
+        z_a : torch.Tensor
+            the node latent representation of encoder3
+        community_reconstructions : torch.Tensor
+            Reconstructed Modularity Matrix
+        """
         # encoder
         x = torch.relu(self.enc1(B))
         hidden1 = F.dropout(x, self.dropout)
@@ -318,8 +352,6 @@ class CommunityAE(nn.Module):
 
 class tGCNEncoder(nn.Module):
     """
-    Description
-    -----------
     tGCNEncoder:
         To effectively fuse community structure information to GCN model for structure anomaly,
     and learn more distinguishable anomalous node representations for local, global, and 
@@ -338,10 +370,6 @@ class tGCNEncoder(nn.Module):
     dropout : float
         Dropout rate
     
-    Returns
-    -------
-    x : torch.Tensor
-        Reconstructed attribute (feature) of nodes.
     """
 
     def __init__(self,
@@ -353,13 +381,32 @@ class tGCNEncoder(nn.Module):
         self.enc2=GraphConv(n_enc_1,n_enc_2,activation=F.relu)
         self.enc3=GraphConv(n_enc_2,n_enc_3,activation=F.relu)
         self.enc4=GraphConv(n_enc_3,n_enc_3,activation=F.relu)
-        
 
         self.dropout = dropout
         for module in self.modules():
             init_weights(module)
 
     def forward(self,g,x,B_enc1,B_enc2,B_enc3):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        x : torch.Tensor
+            features of nodes
+        B_enc1 : torch.Tensor
+            the node latent representation of CommunityAE encoder1
+        B_enc2 : torch.Tensor
+            the node latent representation of CommunityAE encoder2
+        B_enc3 : torch.Tensor
+            the node latent representation of CommunityAE encoder3
+
+        Returns
+        -------
+        torch.Tensor
+            the node latent representation of tGCNEncoder
+        """
         # encoder
         x1=F.dropout(self.enc1(g,x), self.dropout)
         x=x1+B_enc1
@@ -374,8 +421,6 @@ class tGCNEncoder(nn.Module):
 
 class AttrDecoder(nn.Module):
     """
-    Description
-    -----------
     AttrDecoder:
         utilize attribute decoder to take the learned latent representation
     Z as input to decode them for reconstruction of original nodal attributes.
@@ -393,10 +438,6 @@ class AttrDecoder(nn.Module):
     dropout : float
         Dropout rate
 
-    Returns
-    -------
-    x : torch.Tensor
-        Reconstructed attribute (feature) of nodes.
     """
 
     def __init__(self,
@@ -415,6 +456,20 @@ class AttrDecoder(nn.Module):
             init_weights(module)
 
     def forward(self,g,z):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        z : torch.Tensor
+            the node latent representation
+
+        Returns
+        -------
+        torch.Tensor
+            Reconstructed attribute matrix
+        """
         # decoder
         x1=F.dropout(self.dec1(g,z), self.dropout)
         x2=F.dropout(self.dec2(g,x1), self.dropout)
@@ -426,8 +481,6 @@ class AttrDecoder(nn.Module):
 
 class StruDecoder(nn.Module):
     """
-    Description
-    -----------
     StruDecoder:
         utilize structure decoder to take the learned latent representation 
     Z as input to decode them for reconstruction of original graph structure.
@@ -437,10 +490,6 @@ class StruDecoder(nn.Module):
     dropout : float
         Dropout rate
 
-    Returns
-    -------
-    x : torch.Tensor
-        Reconstructed attribute (feature) of nodes.
     """
 
     def __init__(self,
@@ -449,6 +498,18 @@ class StruDecoder(nn.Module):
         self.dropout=dropout
 
     def forward(self,z):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        z : torch.Tensor
+            the node latent representation
+
+        Returns
+        -------
+        torch.Tensor
+            Reconstructed adj matrix
+        """
         # decoder
         x=F.dropout(z, self.dropout)
         x=z@x.T

@@ -57,6 +57,7 @@ class AnomalyDAE(nn.Module):
             structure penalty balance parameter, by default 40.0
         device : str, optional
             cuda id, by default 'cpu'
+
         """
         print('*'*20,'training','*'*20)
 
@@ -147,8 +148,10 @@ def init_weights(module: nn.Module) -> None:
         for module in self.modules():
             init_weights(module)
     ```
-    Args:
-        module (nn.Module)
+    Parameters
+    ----------
+    module : nn.Module
+
     """
     if isinstance(module, nn.Linear):
         # TODO: different initialization
@@ -163,10 +166,9 @@ def init_weights(module: nn.Module) -> None:
 
 class AnomalyDAEModel(nn.Module):
     """
-    Description
-    -----------
     AdnomalyDAE is an anomaly detector consisting of a structure autoencoder,
     and an attribute reconstruction autoencoder. 
+
     Parameters
     ----------
     in_feat_dim : int
@@ -180,10 +182,8 @@ class AnomalyDAEModel(nn.Module):
     dropout : float, optional
         Dropout rate of the model
         Default: 0
-    act: F, optional
-         Choice of activation function
-    """
 
+    """
     def __init__(self,
                  in_feat_dim,
                  in_num_dim,
@@ -198,6 +198,23 @@ class AnomalyDAEModel(nn.Module):
                                         out_dim, dropout)
 
     def forward(self, g, x):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        x : torch.Tensor
+            features of nodes
+
+        Returns
+        -------
+        A_hat : torch.Tensor
+            Reconstructed adj matrix
+        X_hat : torch.Tensor
+            Reconstructed attribute matrix
+
+        """
         A_hat, embed_x = self.structure_AE(g, x)
         X_hat = self.attribute_AE(x, embed_x)
         return A_hat, X_hat
@@ -205,8 +222,6 @@ class AnomalyDAEModel(nn.Module):
 
 class StructureAE(nn.Module):
     """
-    Description
-    -----------
     Structure Autoencoder in AnomalyDAE model: the encoder
     transforms the node attribute X into the latent
     representation with the linear layer, and a graph attention
@@ -214,10 +229,13 @@ class StructureAE(nn.Module):
     neighbors. Finally, the decoder reconstructs the final embedding
     to the original.
     See :cite:`fan2020anomalydae` for details.
+
     Parameters
     ----------
     in_dim: int
         input dimension of node data
+    in_num_dim: int
+        number of nodes
     embed_dim: int
         the latent representation dimension of node
        (after the first linear layer)
@@ -225,14 +243,7 @@ class StructureAE(nn.Module):
         the output dim after the graph attention layer
     dropout: float
         dropout probability for the linear layer
-    act: F, optional
-         Choice of activation function        
-    Returns
-    -------
-    x : torch.Tensor
-        Reconstructed attribute (feature) of nodes.
-    embed_x : torch.Tensor
-              Embedd nodes after the attention layer
+
     """
 
     def __init__(self,
@@ -253,6 +264,23 @@ class StructureAE(nn.Module):
             init_weights(module)
 
     def forward(self, g, x):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        g : dgl.DGLGraph
+            graph dataset
+        x : torch.Tensor
+            features of nodes
+
+        Returns
+        -------
+        x : torch.Tensor
+            Reconstructed attribute (feature) of nodes.
+        embed_x : torch.Tensor
+            Embedd nodes after the attention layer
+
+        """
         # encoder
         x = torch.relu(self.dense(x))
         x = F.dropout(x, self.dropout)
@@ -264,9 +292,25 @@ class StructureAE(nn.Module):
         return x, embed_x
 
 class NodeAttention(nn.Module):
-    """Dense layer."""
+    """node attention layer
+
+    Parameters
+    ----------
+    embed_dim : int
+        the latent representation dimension of node
+    out_sz : int
+        the output dim after the graph attention layer
+    nb_nodes : int
+        number of nodes
+    dropout : float, optional
+        dropout probability for the linear layer, by default 0.
+    act : F, optional
+        Choice of activation function , by default F.elu
+
+    """
     def __init__(self,embed_dim, out_sz, nb_nodes, dropout=0.,
                  act=F.elu, **kwargs):
+        
         super(NodeAttention, self).__init__(**kwargs)
         self.act = act
         self.out_sz = out_sz
@@ -278,6 +322,20 @@ class NodeAttention(nn.Module):
 
 
     def forward(self,inputs,adj):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        inputs : torch.Tensor
+            features of nodes
+        adj : numpy.matrix
+            adj matrix
+
+        Returns
+        -------
+        torch.Tensor
+            Embedd nodes after the attention layer
+        """
         self.bias_mat = adj.to_dense().to(inputs.device)
         inputs=torch.unsqueeze(inputs,1).permute(0,2,1)
         seq_fts = self.conv1(inputs)
@@ -312,13 +370,12 @@ class NodeAttention(nn.Module):
 
 class AttributeAE(nn.Module):
     """
-    Description
-    -----------
     Attribute Autoencoder in AnomalyDAE model: the encoder
     employs two non-linear feature transform to the node attribute
     x. The decoder takes both the node embeddings from the structure
     autoencoder and the reduced attribute representation to 
     reconstruct the original node attribute.
+
     Parameters
     ----------
     in_dim:  int
@@ -329,13 +386,9 @@ class AttributeAE(nn.Module):
     out_dim:  int
         the output dim after two linear layers
     dropout: float
-        dropout probability for the linear layer
-    act: F, optional
-         Choice of activation function   
-    Returns
-    -------
-    x : torch.Tensor
-        Reconstructed attribute (feature) of nodes.
+        dropout probability for the linear layer  
+         
+   
     """
 
     def __init__(self,
@@ -354,6 +407,20 @@ class AttributeAE(nn.Module):
     def forward(self,
                 x,
                 struct_embed):
+        """Forward Propagation
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            features of nodes
+        struct_embed : torch.Tensor
+            Embedd nodes after the attention layer
+
+        Returns
+        -------
+        x : torch.Tensor
+            Reconstructed attribute (feature) of nodes.
+        """
         # encoder
         x = torch.relu(self.dense1(x.T))  # (d,256)
         x = F.dropout(x, self.dropout)

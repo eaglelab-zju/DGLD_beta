@@ -4,6 +4,7 @@ method/CoLA/dataset/*
 t.py
 *.png
 *.pyc
+*.log
 .vscode/settings.json
 EDA.ipynb
 method/CoLA/log/

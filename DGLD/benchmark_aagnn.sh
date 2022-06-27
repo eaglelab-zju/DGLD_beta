@@ -11,7 +11,7 @@ do
   expname=$data'_AAGNN'
   echo ${expname}
   dataset=$data
-  CUDA_VISIBLE_DEVICES=2 PYTHONHASHSEED=$seed python main_aagnn.py --dataset $dataset --device 0 --seed $seed --logdir log/$expname > log/$expname.log 2>&1
+  CUDA_VISIBLE_DEVICES=5 PYTHONHASHSEED=$seed python main_aagnn.py --dataset $dataset --device 0 --seed $seed --logdir log/$expname > log/$expname.log 2>&1
 done
 
 
