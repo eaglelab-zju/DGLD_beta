@@ -9,7 +9,7 @@
 <p align="center">
     <b> <a href="https://zhoushengisnoob.github.io/projects/DGLD_Fronted/index.html">Website</a> | <a href="https://zhoushengisnoob.github.io/DGLD/doc/docstring_html/html/dgld.html">Doc</a> </b>
 </p>
-## **UPDATE**
+## UPDATE
 **This is a beta version a new version is [here](https://github.com/EagleLab-ZJU/DGLD/edit/main/README.md).**
 
 DGLD is an open-source library for Deep Graph Anomaly Detection based on pytorch and DGL. It provides unified interface of popular graph anomaly detection methods, including the data loader, data augmentation, model training and evaluation. Also, the widely used modules are well organized so that developers and researchers can quickly implement their own designed models. 
