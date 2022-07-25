@@ -1,14 +1,8 @@
-<p align="center">
-    <a href="https://zhoushengisnoob.github.io/projects/DGLD_Fronted/index.html"> <img src="DGLD_logo.jpg" width="200"/></a>
-<p>
 
 <h1 align="center">
     <p>A Deep Graph Anomaly Detection Library <br> based on DGL</p>
 </h1>
 
-<p align="center">
-    <b> <a href="https://zhoushengisnoob.github.io/projects/DGLD_Fronted/index.html">Website</a> | <a href="https://zhoushengisnoob.github.io/DGLD/doc/docstring_html/html/dgld.html">Doc</a> </b>
-</p>
 
 DGLD is an open-source library for Deep Graph Anomaly Detection based on pytorch and DGL. It provides unified interface of popular graph anomaly detection methods, including the data loader, data augmentation, model training and evaluation. Also, the widely used modules are well organized so that developers and researchers can quickly implement their own designed models. 
 
@@ -16,9 +10,6 @@ DGLD is an open-source library for Deep Graph Anomaly Detection based on pytorch
 
 **This is a beta version a new version is [here](https://github.com/EagleLab-ZJU/DGLD/edit/main/README.md).**
 
-## News
-* For PyG users, we recommend the [PyGOD](https://github.com/pygod-team/pygod/), which is another comprehensive package that also supports many graph anomaly detection methods.
-* Recently we receive feedback that the reported results are slightly different from the original paper. This is due to the anomaly injection setting, the graph augmentation and sampling. We will provide more details on the settings. 
 
 ## Installation
 Basic environment installation:
@@ -102,12 +93,6 @@ The DGLD provides native graph anomaly detection datasets that widely used by ex
 | [AnomalyDAE](https://arxiv.org/pdf/2002.03665.pdf) |     0.9679     |0.8832    | 0.9182   |    0.7666      |   0.7437     |    0.7091      |    -        |
 |   [ALARM](https://ieeexplore.ieee.org/abstract/document/9162509)    |      0.9479      |    0.8318    |    0.8296    |    0.7718     |    0.7596    |    0.6952    |     -      |
 |  [AAGNN](https://www4.comp.polyu.edu.hk/~xiaohuang/docs/Shuang_CIKM21.pdf)   |   0.7371   | 0.7616 |    0.7442   |    0.7648     | 0.7388 |    0.4868    |     -    |
-|[GUIDE](https://ieeexplore.ieee.org/document/9671990)|0.9815|0.9770|0.9452|0.7668| 0.7331 |0.7100| 0.7711 |
-|[CONAD](https://link.springer.com/chapter/10.1007/978-3-031-05936-0_35)|0.9646|0.9116|0.9396|0.7863| 0.7395 |0.7005| 0.5988 |
-|[GAAN](https://dl.acm.org/doi/abs/10.1145/3340531.3412070)|0.7964|0.7979|0.7861|0.7978|0.7838|0.7081|0.6787|
-|[OCGNN](https://link.springer.com/article/10.1007/s00521-021-05924-9)|0.8071|0.7565|0.7124|0.6285|0.6532|0.4556|0.5455|
 
-## Upcoming Features
-* More Graph Anomaly Detection Methods
-* Edge/Community/Graph Level Anomaly Detection Tasks
-* Graphical Operation Interface
+
+
